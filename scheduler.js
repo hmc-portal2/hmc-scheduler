@@ -110,6 +110,8 @@ function addCourse(course, courses, favoriteCourses, fc) {
       document.getElementById('courses-container').classList.add('empty');
       document.getElementById('courses-container').classList.remove('not-empty');
     }
+    document.getElementById('favorite-courses-container').classList.add('not-empty');
+    document.getElementById('favorite-courses-container').classList.remove('empty');
     return false;
   };
 
@@ -127,6 +129,8 @@ function addCourse(course, courses, favoriteCourses, fc) {
       document.getElementById('favorite-courses-container').classList.add('empty');
       document.getElementById('favorite-courses-container').classList.remove('not-empty');
     }
+    document.getElementById('courses-container').classList.add('not-empty');
+    document.getElementById('courses-container').classList.remove('empty');
     return false;
   };
 
@@ -685,14 +689,15 @@ function messageOnce(str) {
     window.print();
   };
   
-  /*document.getElementById('button-clear').onclick = function () {
+  document.getElementById('button-clear').onclick = function () {
     if (confirm('Are you sure you want to delete all the courses you\'ve added?')) {
       save('courses', courses = []);
+      save('favoriteCourses', favoriteCourses = []);
       window.location.reload();
     }
 
     return false;
-  };*/
+  };
 
   document.getElementById('button-export').onclick = function () {
     var mapOfCourses = mapCourses(schedules[schedulePosition]);
