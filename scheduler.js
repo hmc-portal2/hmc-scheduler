@@ -1088,6 +1088,7 @@ $(".schedule-button").click(function() {
   globalCourses.push(courseData);
   addCourse(courseData, globalCourses, globalFavCourses, false);
   document.getElementById('button-generate').disabled = false;
+  save('courses', globalCourses);
 });
 
 
@@ -1098,6 +1099,7 @@ $(".favorite-button").click(function() {
   var courseData = toCourseObject(courseJson);
   globalFavCourses.push(courseData);
   addCourse(courseData, globalCourses, globalFavCourses, true);
+  save('favoriteCourses', globalFavCourses);
 });
 }
 
