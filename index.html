@@ -2,7 +2,6 @@
 <html lang="en">
 	<head>
 		<title>Scheduler</title>
-		<link rel="stylesheet" href="scheduler.css" type="text/css" />
 		<!-- Latest compiled and minified CSS -->
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 
@@ -11,6 +10,8 @@
 
 		<!-- Latest compiled JavaScript -->
 		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+		
+		<link rel="stylesheet" href="scheduler.css" type="text/css" />
 
 		<meta charset="utf-8">
 
@@ -22,10 +23,10 @@
 		<h2> Course Search</h2>
 		<div class="container-fluid" id="search-area">
 			<div class="col-sm-6">
-				Course code matches: <input type="text" id="course-area">  <input type="checkbox" value="">Use RegEx</label>
+				Course code matches: <input type="text" id="course-code" onkeyup="updateSearch()">  <input type="checkbox" id="code-regex" value="" onmousedown="asyncButtonClick()">Use RegEx</label>
 			</div>
 			<div class="col-sm-6">
-				Course title matches: <input type="text" id="course-code">  <input type="checkbox" value="">Use RegEx</label>
+				Course title matches: <input type="text" id="course-title" onkeyup="updateSearch()">  <input type="checkbox" id="title-regex" value="" onmousedown="asyncButtonClick()">Use RegEx</label>
 			</div>
 			
 		<!-- dropdowns will be inserted here-->

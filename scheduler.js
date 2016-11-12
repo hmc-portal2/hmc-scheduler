@@ -9,10 +9,40 @@ function lingkCallback(json) {
 }
 
 function updateSearch() {
-  globalCourseSearch = globalCourseData;
-  globalCourseSearch = filterCoursesByCalendar(globalCourseSearch, "designator", "SP2017");
-  globalCourseSearch = getCourseFromAttributeRegex(globalCourseSearch, "courseNumber", /.*070.*/);
-  for(var data of globalCourseSearch) addCourse(toCourseObject(data), globalCourses, globalFavCourses);
+    var code = document.getElementById("course-code").value;
+    var title = document.getElementById("course-title").value;
+    var useTitleRegex = document.getElementById("title-regex").checked;
+    var useCodeRegex = document.getElementById("code-regex").checked;
+    
+    // Implement code regex
+    var codeRe;
+    if(!useTitleRegex) {
+        title = title.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+        codeRe = RegExp(".*" + code + ".*");
+    }
+    else {
+        codeRe = RegExp(code);
+    }
+    
+    // Implement title regex
+    var titleRe;
+    if(!useCodeRegex) {
+        code = code.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+        titleRe = RegExp(".*" + title + ".*");
+    }
+    else {
+        titleRe = RegExp(title);
+    }
+    
+    validCourses = getCoursesFromAttributeRegex(globalCourseData, "courseNumber", codeRe);
+    validCourses = getCoursesFromAttributeRegex(validCourses, "courseTitle", titleRe);
+    console.log(validCourses);
+    globalCourseSearch = validCourses;
+}
+
+// Run updateSearch a tenth of a second slower to avoid race conditions.
+function asyncButtonClick() {
+    window.setTimeout(updateSearch,100);
 }
 
 function toAmPmTime(timestring) {
@@ -75,7 +105,7 @@ function toCourseObject(courseJson) {
   return {
     name: courseName,
     times: timeslots,
-    selected: false,
+    selected: true,
     data: courseJson,
   };
 }
@@ -184,6 +214,7 @@ function addCourse(course, courses, favoriteCourses, fc) {
     favoriteCourses.push(courses.splice(courses.indexOf(course), 1)[0]);
     save('courses', courses);
     save('favoriteCourses', favoriteCourses);
+    document.getElementById('button-generate').disabled = false;
 
     courseNode.getElementsByClassName('atf')[0].style='display: none;';
     courseNode.getElementsByClassName('fta')[0].style='';
@@ -203,6 +234,7 @@ function addCourse(course, courses, favoriteCourses, fc) {
     courses.push(favoriteCourses.splice(favoriteCourses.indexOf(course), 1)[0]);
     save('courses', courses);
     save('favoriteCourses', favoriteCourses);
+    document.getElementById('button-generate').disabled = false;
 
     courseNode.getElementsByClassName('atf')[0].style='';
     courseNode.getElementsByClassName('fta')[0].style='display: none;';
@@ -290,7 +322,7 @@ function drawSchedule(schedule) {
     var supposedHeight = (timeSlot.to - timeSlot.from) * hourHeight;
     var paddingHeight = (supposedHeight - div.offsetHeight) / 2;
     div.style.padding = paddingHeight + 'px 0';
-    div.style.height = (supposedHeight - paddingHeight * 2) + 'px';
+    div.style.height = (supposedHeight /*- paddingHeight * 2*/) + 'px';
   });
 }
 
@@ -813,11 +845,10 @@ function getCoursesFromAttribute(response, attribute, expected) {
     return possibleCourses;
 }
 
-function getCourseFromAttributeRegex(response, attribute, expression) {
+function getCoursesFromAttributeRegex(response, attribute, expression) {
     var possibleCourses = [];
     for(key of response) {
         if(key[attribute]) {
-            //console.log(key[attribute]);
             if(key[attribute].match(expression)) {
                 possibleCourses.push(key);
             }
@@ -1184,14 +1215,21 @@ var availabilityLine = "<p>" + filled + " out of " + capacity + " seats filled" 
 
 $("#results-table tbody tr td .schedule-button").click(function() {
   print("selection pushed")
-  //TODO: Add to selected courses
-  //this.disabled = true;
   this.classList += " disabled";
+  courseJson = globalCourseSearch[this.parent.parent.getAttribute('courseIndex')];
+  var courseData = toCourseObject(courseJson);
+  globalCourses.push(courseData);
+  addCourse(courseData, globalCourses, globalFavCourses, false);
+  document.getElementById('button-generate').disabled = false;
 });
 
 
 $("#results-table tbody tr td .favorite-button").click(function() {
   print("selection pushed")
-  //TODO: Add to favorite courses
   this.classList += " disabled";
+  courseJson = globalCourseSearch[this.parent.parent.getAttribute('courseIndex')];
+  var courseData = toCourseObject(courseJson);
+  globalFavCourses.push(courseData);
+  addCourse(courseData, globalCourses, globalFavCourses, true);
 });
+
