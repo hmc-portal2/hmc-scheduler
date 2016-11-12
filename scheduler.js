@@ -12,7 +12,12 @@ function updateSearch() {
   globalCourseSearch = globalCourseData;
   globalCourseSearch = filterCoursesByCalendar(globalCourseSearch, "designator", "SP2017");
   globalCourseSearch = getCourseFromAttributeRegex(globalCourseSearch, "courseNumber", /.*070.*/);
-  for(var data of globalCourseSearch) addCourse(toCourseObject(data), globalCourses, globalFavCourses);
+  for(var data of globalCourseSearch) {
+    var courseData = toCourseObject(data);
+    globalCourses.push(courseData);
+    addCourse(courseData, globalCourses, globalFavCourses, false);
+  }
+  document.getElementById('button-generate').onclick();
 }
 
 function toAmPmTime(timestring) {
@@ -1043,14 +1048,20 @@ function addExpandedData(index) {
 
 $("#results-table tbody tr td .schedule-button").click(function() {
   print("selection pushed")
-  //TODO: Add to selected courses
-  //this.disabled = true;
   this.classList += " disabled";
+  courseJson = globalCourseSearch[this.parent.parent.getAttribute('courseIndex')];
+  var courseData = toCourseObject(courseJson);
+  globalCourses.push(courseData);
+  addCourse(courseData, globalCourses, globalFavCourses, false);
+  document.getElementById('button-generate').disabled = false;
 });
 
 
 $("#results-table tbody tr td .favorite-button").click(function() {
   print("selection pushed")
-  //TODO: Add to favorite courses
   this.classList += " disabled";
+  courseJson = globalCourseSearch[this.parent.parent.getAttribute('courseIndex')];
+  var courseData = toCourseObject(courseJson);
+  globalFavCourses.push(courseData);
+  addCourse(courseData, globalCourses, globalFavCourses, true);
 });
