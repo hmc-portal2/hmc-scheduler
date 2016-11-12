@@ -726,47 +726,47 @@ function messageOnce(str) {
 
 
 
-(function courseNumberStart() {
-  //TODO: Call some function to get this data from portal.
-  //PLACEHOLDER:
-  var terms = ["2:00", "3:00"];
-  createDropdownBlock("Course Number Start", "num-start", "All");
-  createDropdown("#num-start", terms);
-}());
+// (function courseNumberStart() {
+//   //TODO: Call some function to get this data from portal.
+//   //PLACEHOLDER:
+//   var terms = ["2:00", "3:00"];
+//   createDropdownBlock("Course Number Start", "num-start", "All");
+//   createDropdown("#num-start", terms);
+// }());
 
 
-(function courseNumberEnd() {
-  //TODO: Call some function to get this data from portal.
-  //PLACEHOLDER:
-  var terms = ["2:00", "3:00"];
-  createDropdownBlock("Course Number End", "num-end", "All");
-  createDropdown("#num-end", terms);
-}());
+// (function courseNumberEnd() {
+//   //TODO: Call some function to get this data from portal.
+//   //PLACEHOLDER:
+//   var terms = ["2:00", "3:00"];
+//   createDropdownBlock("Course Number End", "num-end", "All");
+//   createDropdown("#num-end", terms);
+// }());
 
 
-(function startTime() {
-  //TODO: Call some function to get this data from portal.
-  //PLACEHOLDER:
-  var terms = ["2:00", "3:00"];
-  createDropdownBlock("Time Start", "time-start", "All");
-  createDropdown("#time-start", terms);
-}());
+// (function startTime() {
+//   //TODO: Call some function to get this data from portal.
+//   //PLACEHOLDER:
+//   var terms = ["2:00", "3:00"];
+//   createDropdownBlock("Time Start", "time-start", "All");
+//   createDropdown("#time-start", terms);
+// }());
 
 
-(function endTime() {
-  //TODO: Call some function to get this data from portal.
-  //PLACEHOLDER:
-  var terms = ["2:00", "3:00"];
-  createDropdownBlock("Time End", "time-end", "All");
-  createDropdown("#time-end", terms);
-}());
+// (function endTime() {
+//   //TODO: Call some function to get this data from portal.
+//   //PLACEHOLDER:
+//   var terms = ["2:00", "3:00"];
+//   createDropdownBlock("Time End", "time-end", "All");
+//   createDropdown("#time-end", terms);
+// }());
 
 
-(function campus() {
-  var terms = ["Mudd", "Pomona"];
-  createDropdownBlock("Campus", "campus", "All");
-  createDropdown("#campus", terms);
-}());
+// (function campus() {
+//   var terms = ["Mudd", "Pomona"];
+//   createDropdownBlock("Campus", "campus", "All");
+//   createDropdown("#campus", terms);
+// }());
 
 
 // (function building() {
@@ -794,7 +794,7 @@ function messageOnce(str) {
 
 
 function createDropdownBlock(label, id, defaultText) {
-  var div = $("<div>", {class: "dropdown my-dropdown col-sm-4", text: label});
+  var div = $("<div>", {class: "dropdown my-dropdown col-sm-6", text: label});
   var button = $("<button>", {class: "btn btn-primary dropdown-toggle dropdown-button", text: defaultText + "  ", "data-toggle": "dropdown"}); 
   var caret = getCaret();
   button.append(caret);
