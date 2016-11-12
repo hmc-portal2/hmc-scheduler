@@ -18,7 +18,7 @@ function randomColor(seed) {
 
 var openNode = false;
 var tabIndex = 0;
-function addCourse(course, i, courses, favoriteCourses, fc) {
+function addCourse(course, courses, favoriteCourses, fc) {
 
   // Make a new course node
   var courseNode = document.getElementById('course-template').cloneNode(true);
@@ -521,7 +521,7 @@ function messageOnce(str) {
       'times': ''
     };
     courses.push(course);
-    addCourse(course, 0, courses, favoriteCourses);
+    addCourse(course, courses, favoriteCourses);
     save('courses', courses);
   };
 
@@ -631,7 +631,7 @@ function messageOnce(str) {
         'data': data
       };
       courses.push(course);
-      addCourse(course, 0, courses);
+      addCourse(course, courses, favoriteCourses, false);
     }
 
     // Add this time to the list if it's not already there
@@ -652,7 +652,7 @@ function messageOnce(str) {
   // Display all the courses
   if (courses.length) {
     for(var i = 0; i < courses.length; i++) {
-      addCourse(courses[i], i, courses, favoriteCourses, false);
+      addCourse(courses[i], courses, favoriteCourses, false);
     }
     document.getElementById('button-generate').onclick();
   }
@@ -660,7 +660,7 @@ function messageOnce(str) {
   // Display all the favorite courses
   if (favoriteCourses.length) {
     for(var i = 0; i < favoriteCourses.length; i++) {
-      addCourse(favoriteCourses[i], i, courses, favoriteCourses, true);
+      addCourse(favoriteCourses[i], courses, favoriteCourses, true);
     }
     document.getElementById('button-generate').onclick();
   }
