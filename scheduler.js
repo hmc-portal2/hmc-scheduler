@@ -1022,8 +1022,8 @@ function showResult(courseIndex) {
   row.append($("<td>", {text: ''}));
   row.append($("<td>", {text: ''}));
   var buttonDiv = $("<td>");
-  buttonDiv.append($("<button>", {text: "Add to Favorites", class:"btn btn-primary favorite-button"}));
-  buttonDiv.append($("<button>", {text: "Add to Schedule", class:"btn btn-success schedule-button"}));
+  buttonDiv.append($("<button>", {text: "Add to Favorites", class:"btn btn-primary favorite-button", courseIndex: courseIndex}));
+  buttonDiv.append($("<button>", {text: "Add to Schedule", class:"btn btn-success schedule-button", courseIndex: courseIndex}));
   row.append(buttonDiv);
   $("#results-table").append(row);
 }
@@ -1035,9 +1035,10 @@ function repopulateChart() {
   for(var i = 0; i < globalCourseSearch.length; i++) {
     showResult(i);
   }
+  addButtonListeners();
 }
 
-
+function addButtonListeners() {
 $("#results-table tbody tr").click(function() {
   print("row clicked");
   //Expand row
@@ -1062,10 +1063,34 @@ $("#results-table tbody tr").click(function() {
   //todo:take out
   updateSearch();
   tempCourse = getCoursesFromAttributeRegex(filterCoursesByCalendar(globalCourseData, "designator", "SP2017"), 'courseNumber', /.*070.*/)[0];
-  print("right function getting called");
-  addExpandedData(this.courseIndex);
+  console.log("right function getting called");
+  console.log("this is", this);
+  console.log('course index is ', this.getAttribute('courseindex'));
+  addExpandedData(this.getAttribute('courseindex'));
 })
 
+
+$(".schedule-button").click(function() {
+  print("selection pushed")
+  this.classList += " disabled";
+  console.log(this.parent);
+  courseJson = globalCourseSearch[this.getAttribute('courseIndex')];
+  var courseData = toCourseObject(courseJson);
+  globalCourses.push(courseData);
+  addCourse(courseData, globalCourses, globalFavCourses, false);
+  document.getElementById('button-generate').disabled = false;
+});
+
+
+$(".favorite-button").click(function() {
+  print("selection pushed")
+  this.classList += " disabled";
+  courseJson = globalCourseSearch[this.getAttribute('courseIndex')];
+  var courseData = toCourseObject(courseJson);
+  globalFavCourses.push(courseData);
+  addCourse(courseData, globalCourses, globalFavCourses, true);
+});
+}
 
 
 var courses = [1,2,3];
@@ -1109,7 +1134,9 @@ var sections = [];
 
 
 function addExpandedData(index) {
+  console.log("Index is ", index);
   var courseObj = globalCourseSearch[index];
+  print("course obj is ", courseObj);
   
   var title = ""
   if (courseObj['courseTitle']) {
@@ -1220,25 +1247,4 @@ var availabilityLine = "<p>" + filled + " out of " + capacity + " seats filled" 
   $(availabilityLine).appendTo(newRow);
   });
 }
-
-
-$(".schedule-button").click(function() {
-  this.classList += " disabled";
-  courseJson = globalCourseSearch[this.parent.parent.getAttribute('courseIndex')];
-  var courseData = toCourseObject(courseJson);
-  globalCourses.push(courseData);
-  addCourse(courseData, globalCourses, globalFavCourses, false);
-  document.getElementById('button-generate').disabled = false;
-});
-
-
-
-
-$(".favorite-button").click(function() {
-  this.classList += " disabled";
-  courseJson = globalCourseSearch[this.parent.parent.getAttribute('courseIndex')];
-  var courseData = toCourseObject(courseJson);
-  globalFavCourses.push(courseData);
-  addCourse(courseData, globalCourses, globalFavCourses, true);
-});
 
