@@ -23,8 +23,6 @@ function addCourse(course, courses, favoriteCourses, fc) {
   // Make a new course node
   var courseNode = document.getElementById('course-template').cloneNode(true);
   courseNode.classList.remove('template');
-  console.log(course);
-  console.log(courseNode);
   course._node = courseNode;
   course._node.toJSON = function () { return undefined; };
 
@@ -37,12 +35,12 @@ function addCourse(course, courses, favoriteCourses, fc) {
   // Collapsing and expanding
   courseNode.querySelector('input[type="text"]').onfocus = function () {
     if (openNode && openNode != courseNode)
-      openNode.classList.add('hidden');
+      openNode.classList.add('collapsed');
     openNode = courseNode;
-    openNode.classList.remove('hidden');
+    openNode.classList.remove('collapsed');
   };
   /*courseNode.querySelector('input[type="text"]').ondblclick = function () {
-    openNode.classList.add('hidden');
+    openNode.classList.add('collapsed');
     openNode = false;
   };*/
 

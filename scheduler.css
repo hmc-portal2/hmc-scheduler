@@ -132,10 +132,10 @@ td {
 	display: block;
 }
 
-.course.hidden textarea, .course.hidden a {
+.course.collapsed textarea, .course.collapsed a {
 	display: none;
 }
-.course.hidden {
+.course.collapsed {
 	margin: 0.25em 0;
 }
 
