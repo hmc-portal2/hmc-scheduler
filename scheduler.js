@@ -22,7 +22,7 @@ function updateSearch() {
         titleRe = RegExp(".*" + title + ".*", "i");
     }
     else {
-        titleRe = RegExp(code, "i");
+        titleRe = RegExp(title, "i");
     }
     
     // Implement code regex
@@ -32,7 +32,7 @@ function updateSearch() {
         codeRe = RegExp(".*" + code + ".*", "i");
     }
     else {
-        codeRe = RegExp(title, "i");
+        codeRe = RegExp(code, "i");
     }
     
     validCourses = getCoursesFromAttributeRegex(globalCourseData, "courseNumber", codeRe);
@@ -957,12 +957,12 @@ function attributeFilter(response, attribute, expected, mustBe) {
 // }());
 
 
-(function availability() {
+/*(function availability() {
   //TODO: get actual building
   createDropdownBlock("Show Conflicts", "conflict", "Yes");
   var terms = ["Yes", "No"];
   createDropdown("#conflicts", terms);
-}());
+}());*/
 
 
 
@@ -1042,8 +1042,8 @@ function showResult(courseIndex) {
   row.append($("<td>", {text: ''}));
   row.append($("<td>", {text: ''}));
   var buttonDiv = $("<td>");
-  buttonDiv.append($("<button>", {text: "Add to Favorites", class:"btn btn-primary favorite-button", courseIndex: courseIndex}));
   buttonDiv.append($("<button>", {text: "Add to Schedule", class:"btn btn-success schedule-button", courseIndex: courseIndex}));
+  buttonDiv.append($("<button>", {text: "Add to Favorites", class:"btn btn-primary favorite-button", courseIndex: courseIndex}));
   row.append(buttonDiv);
   $("#results-table").append(row);
 }
