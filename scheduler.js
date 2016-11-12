@@ -38,6 +38,8 @@ function updateSearch() {
     validCourses = getCoursesFromAttributeRegex(validCourses, "courseTitle", titleRe);
     console.log(validCourses);
     globalCourseSearch = validCourses;
+
+    repopulateChart();
 }
 
 // Run updateSearch a tenth of a second slower to avoid race conditions.
@@ -996,18 +998,29 @@ function getCaret() {
 
 
 
-function showResult(courseObj) {
+function showResult(courseIndex) {
   //Create a row to hold the results
-  var row = $("<tr>", {courseIndex: 3}); //TODO: Instaed of three, make this an index of the courseObj
-  row.append($("<td>", {text: "ECON104"}));
-  row.append($("<td>", {text: "Financial Economics"}));
-  row.append($("<td>", {text: "Gary Evans"}));
-  row.append($("<td>", {text: "50/500"}));
-  row.append($("<td>", {text: "Open"}));
-  row.append($("<td>", {text: "Never (unless you really want to go to class)"}));
-  row.append($("<td>", {text: "3.0"}));
-  row.append($("<td>", {text: "9/9/9"}));
-  row.append($("<td>", {text: "12/12/12"}));
+  var courseObj = globalCourseSearch[courseIndex];
+  var row = $("<tr>", {courseIndex: courseIndex}); //TODO: Instaed of three, make this an index of the courseObj
+  row.append($("<td>", {text: courseObj['courseNumber'] || 'NO SECTION'}));
+  row.append($("<td>", {text: courseObj['courseTitle'] || 'No title'}));
+  var instructors = '';
+  for(var section of courseObj['courseSections']) for(var instructordata of section['sectionInstructor']) {
+    if(instructordata['lastName']) {
+      if(instructors.length > 0) instructors += ', ';
+      instructors += instructordata['lastName']
+    } else if(instructordata['firstName']) {
+      if(instructors.length > 0) instructors += ', ';
+      instructors += instructordata['firstName']
+    }
+  }
+  row.append($("<td>", {text: instructors}));
+  row.append($("<td>", {text: ''}));
+  row.append($("<td>", {text: ''}));
+  row.append($("<td>", {text: ''}));
+  row.append($("<td>", {text: ''}));
+  row.append($("<td>", {text: ''}));
+  row.append($("<td>", {text: ''}));
   var buttonDiv = $("<td>");
   buttonDiv.append($("<button>", {text: "Add to Favorites", class:"btn btn-primary favorite-button"}));
   buttonDiv.append($("<button>", {text: "Add to Schedule", class:"btn btn-success schedule-button"}));
@@ -1016,12 +1029,14 @@ function showResult(courseObj) {
 }
 
 
-
-(function tempPopulateChart() {
-  for(var i = 0; i < 10; i++) {
-    showResult(3);
+function repopulateChart() {
+  $("#results-table").find("tbody").remove();
+  $("#results-table").append($("<tbody>"));
+  for(var i = 0; i < globalCourseSearch.length; i++) {
+    showResult(i);
   }
-}());
+}
+
 
 $("#results-table tbody tr").click(function() {
   //Expand row
@@ -1070,7 +1085,7 @@ function addExpandedData(index) {
 }
 
 
-$("#results-table tbody tr td .schedule-button").click(function() {
+$(".schedule-button").click(function() {
   print("selection pushed")
   this.classList += " disabled";
   courseJson = globalCourseSearch[this.parent.parent.getAttribute('courseIndex')];
@@ -1081,7 +1096,7 @@ $("#results-table tbody tr td .schedule-button").click(function() {
 });
 
 
-$("#results-table tbody tr td .favorite-button").click(function() {
+$(".favorite-button").click(function() {
   print("selection pushed")
   this.classList += " disabled";
   courseJson = globalCourseSearch[this.parent.parent.getAttribute('courseIndex')];
