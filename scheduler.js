@@ -2,6 +2,7 @@ var globalCourseData = [];
 var globalCourseSearch = [];
 var globalCourses;
 var globalFavCourses;
+var globalTerm;
 
 function lingkCallback(json) {
   globalCourseData = json['data'];
@@ -18,24 +19,28 @@ function updateSearch() {
     var codeRe;
     if(!useTitleRegex) {
         title = title.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-        codeRe = RegExp(".*" + code + ".*");
+        codeRe = RegExp(".*" + code + ".*", "i");
     }
     else {
-        codeRe = RegExp(code);
+        codeRe = RegExp(code, "i");
     }
     
     // Implement title regex
     var titleRe;
     if(!useCodeRegex) {
         code = code.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-        titleRe = RegExp(".*" + title + ".*");
+        titleRe = RegExp(".*" + title + ".*", "i");
     }
     else {
-        titleRe = RegExp(title);
+        titleRe = RegExp(title, "i");
     }
     
     validCourses = getCoursesFromAttributeRegex(globalCourseData, "courseNumber", codeRe);
     validCourses = getCoursesFromAttributeRegex(validCourses, "courseTitle", titleRe);
+    console.log(globalTerm);
+    if(globalTerm != "") {    
+        validCourses = filterCoursesByCalendar(validCourses, "designator", globalTerm); 
+    }
     console.log(validCourses);
     globalCourseSearch = validCourses;
 
@@ -883,8 +888,8 @@ function attributeFilter(response, attribute, expected, mustBe) {
 (function getCourseTerms() {
   //TODO: Call some function to get this data from portal.
   //PLACEHOLDER:
-  createDropdownBlock("Course Term", "course-terms", "Spring!");
-  var terms = ["spring17", "fall17", "never"];
+  createDropdownBlock("Course Term", "course-terms", "[Select]");
+  var terms = ["SP2017", "FA2016", "never"];
   createDropdown("#course-terms", terms);
 }());
 
@@ -943,9 +948,9 @@ function attributeFilter(response, attribute, expected, mustBe) {
 
 (function availability() {
   //TODO: get actual building
-  var terms = ["All", "Open", "Full"];
-  createDropdownBlock("Availability", "availability", "All");
-  createDropdown("#availability", terms);
+  var terms = ["No", "Yes"];
+  createDropdownBlock("Allow Conflicts", "conflict", "No");
+  createDropdown("#conflicts", terms);
 }());
 
 
@@ -959,7 +964,7 @@ function attributeFilter(response, attribute, expected, mustBe) {
 
 function createDropdownBlock(label, id, defaultText) {
   var div = $("<div>", {class: "dropdown my-dropdown col-sm-6", text: label});
-  var button = $("<button>", {class: "btn btn-primary dropdown-toggle dropdown-button", text: defaultText + "  ", "data-toggle": "dropdown"}); 
+  var button = $("<button>", {class: "btn btn-primary dropdown-toggle dropdown-button", text: defaultText, "data-toggle": "dropdown"}); 
   var caret = getCaret();
   button.append(caret);
   div.append(button);
@@ -989,6 +994,10 @@ $(".dropdown-menu li a").click(function() {
   $(this).parents(".dropdown").find(".btn").html($(this).text() + getCaret());
 })
 
+$(".dropdown-menu li a").click(function() {
+    globalTerm = $(this).text();
+    updateSearch();
+});
 
 
 function getCaret() {
@@ -1079,6 +1088,7 @@ $(".schedule-button").click(function() {
   globalCourses.push(courseData);
   addCourse(courseData, globalCourses, globalFavCourses, false);
   document.getElementById('button-generate').disabled = false;
+  save('courses', globalCourses);
 });
 
 
@@ -1089,6 +1099,7 @@ $(".favorite-button").click(function() {
   var courseData = toCourseObject(courseJson);
   globalFavCourses.push(courseData);
   addCourse(courseData, globalCourses, globalFavCourses, true);
+  save('favoriteCourses', globalFavCourses);
 });
 }
 
