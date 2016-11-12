@@ -9,10 +9,40 @@ function lingkCallback(json) {
 }
 
 function updateSearch() {
-  globalCourseSearch = globalCourseData;
-  globalCourseSearch = filterCoursesByCalendar(globalCourseSearch, "designator", "SP2017");
-  globalCourseSearch = getCourseFromAttributeRegex(globalCourseSearch, "courseNumber", /.*070.*/);
-  for(var data of globalCourseSearch) addCourse(toCourseObject(data), globalCourses, globalFavCourses);
+    var code = document.getElementById("course-code").value;
+    var title = document.getElementById("course-title").value;
+    var useTitleRegex = document.getElementById("title-regex").checked;
+    var useCodeRegex = document.getElementById("code-regex").checked;
+    
+    // Implement code regex
+    var codeRe;
+    if(!useTitleRegex) {
+        title = title.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+        codeRe = RegExp(".*" + code + ".*");
+    }
+    else {
+        codeRe = RegExp(code);
+    }
+    
+    // Implement title regex
+    var titleRe;
+    if(!useCodeRegex) {
+        code = code.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+        titleRe = RegExp(".*" + title + ".*");
+    }
+    else {
+        titleRe = RegExp(title);
+    }
+    
+    validCourses = getCoursesFromAttributeRegex(globalCourseData, "courseNumber", codeRe);
+    validCourses = getCoursesFromAttributeRegex(validCourses, "courseTitle", titleRe);
+    console.log(validCourses);
+    globalCourseSearch = validCourses;
+}
+
+// Run updateSearch a tenth of a second slower to avoid race conditions.
+function asyncButtonClick() {
+    window.setTimeout(updateSearch,100);
 }
 
 function toAmPmTime(timestring) {
@@ -813,11 +843,10 @@ function getCoursesFromAttribute(response, attribute, expected) {
     return possibleCourses;
 }
 
-function getCourseFromAttributeRegex(response, attribute, expression) {
+function getCoursesFromAttributeRegex(response, attribute, expression) {
     var possibleCourses = [];
     for(key of response) {
         if(key[attribute]) {
-            //console.log(key[attribute]);
             if(key[attribute].match(expression)) {
                 possibleCourses.push(key);
             }
