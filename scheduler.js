@@ -923,7 +923,7 @@ function attributeFilter(response, attribute, expected, mustBe) {
 function createDropdownBlock(label, id, defaultText) {
   var div = $("<div>", {class: "dropdown my-dropdown col-sm-4", text: label});
   var button = $("<button>", {class: "btn btn-primary dropdown-toggle dropdown-button", text: defaultText + "  ", "data-toggle": "dropdown"}); 
-  var caret = $("<span>", {class: "caret"});
+  var caret = getCaret();
   button.append(caret);
   div.append(button);
   var list = $("<ul>", {class: "dropdown-menu", id: id});
@@ -947,4 +947,104 @@ function createDropdown(elementID, namesList) {
   }
 }
 
-//TODO: How to store variable when clicked!
+
+$(".dropdown-menu li a").click(function() {
+  $(this).parents(".dropdown").find(".btn").html($(this).text() + getCaret());
+})
+
+
+
+function getCaret() {
+  return ' <span class="caret"></span>';
+}
+
+
+
+
+function showResult(courseObj) {
+  //Create a row to hold the results
+  var row = $("<tr>", {courseIndex: 3}); //TODO: Instaed of three, make this an index of the courseObj
+  row.append($("<td>", {text: "ECON104"}));
+  row.append($("<td>", {text: "Financial Economics"}));
+  row.append($("<td>", {text: "Gary Evans"}));
+  row.append($("<td>", {text: "50/500"}));
+  row.append($("<td>", {text: "Open"}));
+  row.append($("<td>", {text: "Never (unless you really want to go to class)"}));
+  row.append($("<td>", {text: "3.0"}));
+  row.append($("<td>", {text: "9/9/9"}));
+  row.append($("<td>", {text: "12/12/12"}));
+  var buttonDiv = $("<td>");
+  buttonDiv.append($("<button>", {text: "Add to Favorites", class:"btn btn-primary favorite-button"}));
+  buttonDiv.append($("<button>", {text: "Add to Schedule", class:"btn btn-success schedule-button"}));
+  row.append(buttonDiv);
+  $("#results-table").append(row);
+}
+
+
+
+(function tempPopulateChart() {
+  for(var i = 0; i < 10; i++) {
+    showResult(3);
+  }
+}());
+
+$("#results-table tbody tr").click(function() {
+  //Expand row
+  var newRow = $("<tr>", {class:"open-course"});
+  newRow.append($("<td>", {colspan:"100%", class:"expanded"}));
+  var openRow = null;
+  $("#results-table").children('tbody').each(function() {
+    $(".expanded").remove();
+    if ($(".open")[0]) {
+      //If open, remove it
+      var openBox = $(".open")[0];
+      openBox.className = "";
+      openRow = openBox;
+    }
+  });
+  if (openRow == this) {
+    return;
+  }
+  $(newRow).insertAfter(this);
+  this.className += "open";
+  addExpandedData(this.courseIndex); //TODO: Make sure this exists
+})
+
+
+
+var courses = [1,2,3]; //TODO: Fix this!
+
+
+function addExpandedData(index) {
+  var courseObj = courses[index]; //TODO: Make sure this gets an actual course object
+  var nameLine = "<p>Financial Econ" + "(" + "ECON104" + ")</p>";
+  var profLine = $("<p>", {text:"Prof: " + "Gary Evans"});
+  var deptLine = "<p>Dept:" + "Economics</p>";
+  var timeLine = "<p>Offered:" + "Spring 2017" + ": " + "1/1/1" + " through " + "2/2/2</p>";
+  var scheduleLine = "<p>Times:" + "T/R 2:45-5:30PM</p>";
+  var availabilityLine = "<p>Open: " + "3" + " out of " + "15" + " seats " + " available</p>";
+  var newRow = $(".expanded")[0]
+  print($(".expanded"));
+  $(nameLine).appendTo(newRow);
+  $(profLine).appendTo(newRow);
+  $(deptLine).appendTo(newRow);
+  $(timeLine).appendTo(newRow);
+  $(scheduleLine).appendTo(newRow);
+  $(availabilityLine).appendTo(newRow);
+  print("func got called");
+}
+
+
+$("#results-table tbody tr td .schedule-button").click(function() {
+  print("selection pushed")
+  //TODO: Add to selected courses
+  //this.disabled = true;
+  this.classList += " disabled";
+});
+
+
+$("#results-table tbody tr td .favorite-button").click(function() {
+  print("selection pushed")
+  //TODO: Add to favorite courses
+  this.classList += " disabled";
+});
