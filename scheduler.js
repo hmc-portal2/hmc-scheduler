@@ -793,7 +793,7 @@ function messageOnce(str) {
 function createDropdownBlock(label, id, defaultText) {
   var div = $("<div>", {class: "dropdown my-dropdown col-sm-4", text: label});
   var button = $("<button>", {class: "btn btn-primary dropdown-toggle dropdown-button", text: defaultText + "  ", "data-toggle": "dropdown"}); 
-  var caret = $("<span>", {class: "caret"});
+  var caret = getCaret();
   button.append(caret);
   div.append(button);
   var list = $("<ul>", {class: "dropdown-menu", id: id});
@@ -817,4 +817,13 @@ function createDropdown(elementID, namesList) {
   }
 }
 
-//TODO: How to store variable when clicked!
+
+$(".dropdown-menu li a").click(function() {
+  $(this).parents(".dropdown").find(".btn").html($(this).text() + getCaret());
+})
+
+
+
+function getCaret() {
+  return ' <span class="caret"></span>';
+}
