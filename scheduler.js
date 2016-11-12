@@ -956,7 +956,7 @@ function attributeFilter(response, attribute, expected, mustBe) {
 
 
 function createDropdownBlock(label, id, defaultText) {
-  var div = $("<div>", {class: "dropdown my-dropdown col-sm-6", text: label});
+  var div = $("<div>", {class: "dropdown my-dropdown col-sm-6", text: label, id: id + "_"});
   var button = $("<button>", {class: "btn btn-primary dropdown-toggle dropdown-button", text: defaultText + "  ", "data-toggle": "dropdown"}); 
   var caret = getCaret();
   button.append(caret);
@@ -1045,12 +1045,8 @@ $("#results-table tbody tr").click(function() {
 
   //todo:take out
   updateSearch();
-  tempCourse = getCourseFromAttributeRegex(filterCoursesByCalendar(globalCourseData, "designator", "SP2017"), 'courseNumber', /.*070.*/)[0];
-  print("tempCourse:");
-  print(tempCourse);
-
-
-  addExpandedData(this.courseIndex);
+  tempCourse = getCoursesFromAttributeRegex(filterCoursesByCalendar(globalCourseData, "designator", "SP2017"), 'courseNumber', /.*070.*/)[0];
+ /// addExpandedData(this.courseIndex); TODO: Add back in!
 })
 
 
@@ -1180,10 +1176,6 @@ function addExpandedData(index) {
     });
   }
 
-  print("THIS IS");
-  print(this);
-
-
   var filled = "??"
   if (this['currentEnrollment']) {
     filled = this['currentEnrollment'];
@@ -1214,7 +1206,6 @@ var availabilityLine = "<p>" + filled + " out of " + capacity + " seats filled" 
 
 
 $("#results-table tbody tr td .schedule-button").click(function() {
-  print("selection pushed")
   this.classList += " disabled";
   courseJson = globalCourseSearch[this.parent.parent.getAttribute('courseIndex')];
   var courseData = toCourseObject(courseJson);
@@ -1225,7 +1216,6 @@ $("#results-table tbody tr td .schedule-button").click(function() {
 
 
 $("#results-table tbody tr td .favorite-button").click(function() {
-  print("selection pushed")
   this.classList += " disabled";
   courseJson = globalCourseSearch[this.parent.parent.getAttribute('courseIndex')];
   var courseData = toCourseObject(courseJson);
