@@ -15,35 +15,32 @@ function updateSearch() {
     var useTitleRegex = document.getElementById("title-regex").checked;
     var useCodeRegex = document.getElementById("code-regex").checked;
     
-    // Implement code regex
-    var codeRe;
-    if(!useTitleRegex) {
-        title = title.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-        codeRe = RegExp(".*" + code + ".*", "i");
-    }
-    else {
-        codeRe = RegExp(code, "i");
-    }
-    
     // Implement title regex
     var titleRe;
-    if(!useCodeRegex) {
-        code = code.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+    if(!useTitleRegex) {
+        title = title.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
         titleRe = RegExp(".*" + title + ".*", "i");
     }
     else {
-        titleRe = RegExp(title, "i");
+        titleRe = RegExp(code, "i");
+    }
+    
+    // Implement code regex
+    var codeRe;
+    if(!useCodeRegex) {
+        code = code.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+        codeRe = RegExp(".*" + code + ".*", "i");
+    }
+    else {
+        codeRe = RegExp(title, "i");
     }
     
     validCourses = getCoursesFromAttributeRegex(globalCourseData, "courseNumber", codeRe);
     validCourses = getCoursesFromAttributeRegex(validCourses, "courseTitle", titleRe);
-    console.log(globalTerm);
     if(globalTerm != "") {    
         validCourses = filterCoursesByCalendar(validCourses, "designator", globalTerm); 
     }
-    console.log(validCourses);
     globalCourseSearch = validCourses;
-
     repopulateChart();
 }
 
