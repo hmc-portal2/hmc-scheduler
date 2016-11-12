@@ -191,6 +191,10 @@ td {
 #courses-container.not-empty #courses-filler {
 	display: none;
 }
+#favorite-courses-container.empty #favorite-courses,
+#favorite-courses-container.not-empty #favorite-courses-filler {
+	display: none;
+}
 
 #bookmarklet {
 	outline: 1px dotted black;
