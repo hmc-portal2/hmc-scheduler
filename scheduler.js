@@ -974,7 +974,7 @@ function showResult(courseObj) {
   row.append($("<td>", {text: "50/500"}));
   row.append($("<td>", {text: "Open"}));
   row.append($("<td>", {text: "Never (unless you really want to go to class)"}));
-  row.append($("<td>", {text: "3.0"}));
+  //row.append($("<td>", {text: "3.0"})); //TODO: Add back later when we have the data
   row.append($("<td>", {text: "9/9/9"}));
   row.append($("<td>", {text: "12/12/12"}));
   var buttonDiv = $("<td>");
@@ -984,7 +984,7 @@ function showResult(courseObj) {
   $("#results-table").append(row);
 }
 
-
+var tempCourse = null;
 
 (function tempPopulateChart() {
   for(var i = 0; i < 10; i++) {
@@ -1011,31 +1011,174 @@ $("#results-table tbody tr").click(function() {
   }
   $(newRow).insertAfter(this);
   this.className += "open";
-  addExpandedData(this.courseIndex); //TODO: Make sure this exists
+
+  //todo:take out
+  updateSearch();
+  tempCourse = getCourseFromAttributeRegex(filterCoursesByCalendar(globalCourseData, "designator", "SP2017"), 'courseNumber', /.*070.*/)[0];
+  print("tempCourse:");
+  print(tempCourse);
+
+
+  addExpandedData(this.courseIndex);
 })
 
 
 
-var courses = [1,2,3]; //TODO: Fix this!
+var courses = [1,2,3];
+
+
+
+// var tempCourse = {
+//             "courseGuid": "7f3bed6f437b4a9bb7de22c1bfef7270",
+//             "courseNumber": "ABROAD   HM",
+//             "courseSections": [],
+//             "courseTitle": "Semester Abroad",
+//             "departments": [
+//                 {
+//                     "departmentGuid": "74dc3f18d80d41bb8f9b65fbbf74ceb7",
+//                     "externalId": "HMID",
+//                     "lastModified": "2016-09-14T20:48:18.753733Z",
+//                     "name": "Interdepartmental Course",
+//                     "shortName": "HID"
+//                 }
+//             ],
+//             "externalId": "ABROAD   HM",
+//             "facilityGuid": "768193214f0946d99345c1036f46c9d1",
+//             "institutionGuid": "20108cbd4ff748adaa9873e5ff310793",
+//             "lastModified": "2016-09-14T20:48:19.965841Z",
+//             "programs": [
+//                 {
+//                     "externalId": "HMID",
+//                     "lastModified": "2016-10-04T18:54:51.352202Z",
+//                     "name": "ASAM",
+//                     "postsecondaryProgramLevel": "Major",
+//                     "programGuid": "734e54c39760430888ec419f55770769"
+//                 }
+//             ],
+//             "subjectAbbreviation": "HMID"
+//         }; //TODO: Fix this!
+
+var sections = [];
+
+
+
 
 
 function addExpandedData(index) {
-  var courseObj = courses[index]; //TODO: Make sure this gets an actual course object
-  var nameLine = "<p>Financial Econ" + "(" + "ECON104" + ")</p>";
-  var profLine = $("<p>", {text:"Prof: " + "Gary Evans"});
-  var deptLine = "<p>Dept:" + "Economics</p>";
-  var timeLine = "<p>Offered:" + "Spring 2017" + ": " + "1/1/1" + " through " + "2/2/2</p>";
-  var scheduleLine = "<p>Times:" + "T/R 2:45-5:30PM</p>";
-  var availabilityLine = "<p>Open: " + "3" + " out of " + "15" + " seats " + " available</p>";
-  var newRow = $(".expanded")[0]
-  print($(".expanded"));
+  var courseObj = globalCourseSearch[index];
+  
+  var title = ""
+  if (courseObj['courseTitle']) {
+    title = courseObj['courseTitle']
+  }   
+  
+  var code = ""
+  if (courseObj['courseNumber']) {
+    code = courseObj['courseNumber']
+  }
+
+  var dept = "" //DO THIS!!!
+  if (courseObj['departments']) {
+    jQuery.each(courseObj['departments'], function() {
+      if (this['name']) {
+        dept += this['name'] + ' ';
+      }
+    })
+    courseTitle = courseObj['courseTitle']
+  }
+
+  var nameLine = "<p>" + title + " (" + code + ")</p>";
+  var deptLine = "<p>Dept: " + dept + "</p>";
+ 
+  
+  var newRow = $(".expanded")[0];
   $(nameLine).appendTo(newRow);
-  $(profLine).appendTo(newRow);
   $(deptLine).appendTo(newRow);
+
+
+
+  //Loop through section-specific info
+  var index = 1;
+  jQuery.each(courseObj['courseSections'], function() {
+
+
+
+  var prof = "";
+  if (this['sectionInstructor']) {
+    var sectionInstructors = this['sectionInstructor']
+    jQuery.each(sectionInstructors, function() {
+      var actualName = this['firstName'];
+      prof += actualName + ' ';
+    });
+  }
+
+
+
+  var term = "";
+  var start = "";
+  var end = "";
+  if (this['calendarSessions']) {
+    var session = this['calendarSessions'][0]
+    if (session['externalId']) {
+      term = session['externalId']
+    }
+    if (session['beginDate']) {
+      start = session['beginDate']
+    }
+    if (session['endDate']) {
+      end = session['endDate']
+    }
+  }
+
+  
+  var times = ""
+  if (this['courseSectionSchedule']) {
+    jQuery.each(this['courseSectionSchedule'], function() {
+      if(this['classMeetingDays']) {
+        times += this['classMeetingDays'].replace(/-/g, '');
+      if (this['classBeginningTime']) {
+        times += ': ' + toAmPmTime(this['classBeginningTime']);
+      }
+      if (this['classEndingTime']) {
+        times += '-' + toAmPmTime(this['classEndingTime']);
+      }
+    }
+
+
+
+    });
+  }
+
+  print("THIS IS");
+  print(this);
+
+
+  var filled = "??"
+  if (this['currentEnrollment']) {
+    filled = this['currentEnrollment'];
+  }
+
+  var capacity = "??"
+  if (this['capacity']) {
+    capacity = this['capacity'];
+  }
+  index++;
+
+    //Section string
+
+var sectionLine = $("<p>", {text:"Section: " + index});
+var profLine = $("<p>", {text:"Prof: " + prof});
+var timeLine = "<p>Offered: " + term + ": " + start + " through " + end + "</p>";
+var scheduleLine = "<p>Times: " + times + "</p>";
+var availabilityLine = "<p>" + filled + " out of " + capacity + " seats filled" + "</p>";
+
+  $("<br/>").appendTo(newRow);
+  $(sectionLine).appendTo(newRow);
+  $(profLine).appendTo(newRow);
   $(timeLine).appendTo(newRow);
   $(scheduleLine).appendTo(newRow);
   $(availabilityLine).appendTo(newRow);
-  print("func got called");
+  });
 }
 
 
