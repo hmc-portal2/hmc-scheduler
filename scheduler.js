@@ -1035,12 +1035,31 @@ function showResult(courseIndex) {
     }
   }
   row.append($("<td>", {text: instructors}));
-  row.append($("<td>", {text: ''}));
-  row.append($("<td>", {text: ''}));
-  row.append($("<td>", {text: ''}));
-  row.append($("<td>", {text: ''}));
-  row.append($("<td>", {text: ''}));
-  row.append($("<td>", {text: ''}));
+  var timeslots = '';
+  var isfirsttimeslot = true;
+  var courseJson = courseObj;
+  for(var section of courseJson['courseSections']) {
+    if(!isfirsttimeslot) {
+      timeslots += '; ';
+    }
+    var timeslot = '';
+    var isFirstTime = true;
+    for(var schedule of section['courseSectionSchedule']) {
+      if(!isFirstTime) {
+        timeslot += ', ';
+        isFirstTime = true;
+      }
+      timeslot += schedule['classMeetingDays'].replace(/-/g, '');
+      timeslot += '\u00a0';
+      timeslot += toAmPmTime(schedule['classBeginningTime']);
+      timeslot += '-';
+      timeslot += toAmPmTime(schedule['classEndingTime']);
+    }
+    timeslots += timeslot;
+    isfirsttimeslot = false;
+  }
+  row.append($("<td>", {text: timeslots}));
+  //row.append($("<td>", {text: ''}));
   var buttonDiv = $("<td>");
   buttonDiv.append($("<button>", {text: "Add to Schedule", class:"btn btn-success schedule-button", courseIndex: courseIndex}));
   buttonDiv.append($("<button>", {text: "Add to Favorites", class:"btn btn-primary favorite-button", courseIndex: courseIndex}));
