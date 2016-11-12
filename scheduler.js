@@ -1,3 +1,72 @@
+function lingkCallback(json) {
+  
+}
+
+function toAmPmTime(timestring) {
+  if(timestring.length === 3) {
+    timestring = '0' + timestring;
+  }
+  hours = timestring.substring(0,2);
+  ispm = hours > 12;
+  if(ispm) hours = '' + (hours - 12);
+  if(hours.length === 1) {
+    hours = '0' + hours;
+  }
+  minutes = timestring.substring(2,4);
+  return hours + ':' + minutes + (ispm? 'PM': 'AM');
+}
+
+function toCourseObject(courseJson) {
+  var courseName = courseJson['courseTitle'];
+  var timeslots = '';
+  var isfirsttimeslot = true;
+  for(var section of courseJson['courseSections']) {
+    if(!isfirsttimeslot) {
+      timeslots += '\n';
+      isfirsttimeslot = true;
+    }
+    var instructorName = '';
+    if(section['sectionInstructor'] && section['sectionInstructor'].length > 0) {
+      var instructor = section['sectionInstructor'][0];
+      if(instructor['lastName']) {
+        instructorName = instructor['lastName'];
+      } else if(instructor['firstName']) {
+        instructorName = instructor['firstName'];
+      } else {
+        instructorName = 'Unknown';
+      }
+    } else {
+      instructorName = 'Unknown';
+    }
+    var timeslot = '';
+    timeslot += section['externalId'];
+    timeslot += ' (';
+    timeslot += instructorName;
+    timeslot += '): ';
+    var isFirstTime = true;
+    for(var schedule of section['courseSectionSchedule']) {
+      if(!isFirstTime) {
+        timeslot += ', ';
+        isFirstTime = true;
+      }
+      timeslot += schedule['classMeetingDays'].replace(/-/g, '');
+      timeslot += ' ';
+      timeslot += toAmPmTime(schedule['classBeginningTime']);
+      timeslot += '-';
+      timeslot += toAmPmTime(schedule['classEndingTime']);
+      timeslot += '; ';
+      timeslot += schedule['instructionSiteName'];
+    }
+    timeslots += timeslot;
+  }
+  return {
+    name: courseName,
+    times: timeslots,
+    selected: false,
+    data: courseJson,
+  };
+}
+
 var options = {
   'showSections': false,
   'allowConflicts': false
@@ -476,38 +545,6 @@ function messageOnce(str) {
 }
 
 (function () {
-  var VERSION = 3;
-
-  // Version check
-  if (window.location.hash.indexOf('#!v=') == 0) {
-    if (+window.location.hash.substr('#!v='.length) < VERSION)
-      alert('Your bookmarklet looks outdated! You should redrag the bookmark to the bookmarks bar and try again.');
-    window.location.hash = '#';
-  }
-
-  // Version check
-  if ((!localStorage.schedulerVersion || localStorage.schedulerVersion < VERSION) && localStorage.courses) {
-    localStorage.schedulerVersion = VERSION;
-//    alert('Update: you can now show section numbers with the checkbox next to the Generate button. Unfortunately, for it to work, you\'ll need to redrag the bookmarklet, delete all your classes, and re-add them. Sorry!');
-  }
-
-  // It looks like they clicked directly on the bookmark without going to Portal.
-  if (window.location.hash == '#!bookmarklet') {
-    if (messageOnce('search-portal'))
-      alert('Go to Portal before you click this bookmark!');
-
-    window.location.hash = '#';
-  }
-
-  // Check if it's an older version...
-  window.onhashchange = function () {
-    try {
-      if (JSON.parse(unescape(window.location.hash.substr(1)))[0])
-        alert('Your bookmarklet looks outdated! You should redrag the bookmark to the bookmarks bar and try again.');
-    } catch (e) {}
-  };
-  window.onhashchange();
-
   // Load data
   var courses = localStorage.courses ? JSON.parse(localStorage.courses) : [];
   var favoriteCourses = localStorage.favoriteCourses ? JSON.parse(localStorage.favoriteCourses) : [];
@@ -516,7 +553,7 @@ function messageOnce(str) {
   var schedulePosition = 0;
 
   // Attach events
-  document.getElementById('button-add').onclick = function () {
+  /*document.getElementById('button-add').onclick = function () {
     var course = {
       'name': '',
       'selected': true,
@@ -525,7 +562,7 @@ function messageOnce(str) {
     courses.push(course);
     addCourse(course, courses, favoriteCourses);
     save('courses', courses);
-  };
+  };*/
 
   document.getElementById('button-save').onclick = function () {
     var name = prompt('What would you like to call this schedule?', '');
@@ -546,15 +583,15 @@ function messageOnce(str) {
     var count = courses.filter(function (course) {
       return course.selected;
     }).map(function (course) {
-      if (!course.data)
+      if (!course.data || !course.data['creditValue'])
         return NaN;
 
       // Mudd courses are worth their full value.
-      if ((course.data['courseCode'].indexOf(' HM-') != -1) || (course.data['courseCode'].indexOf('HM-') != -1))
-        return course.data['credits'];
+      if ((course.data['courseNumber'].indexOf('HM') == -1))
+        return course.data['creditValue'];
 
       // Other colleges' courses need to be multiplied by three.
-      return course.data['credits'] * 3;
+      return course.data['creditValue'] * 3;
     }).reduce(function (a, b) {
       return a + b;
     }, 0);
