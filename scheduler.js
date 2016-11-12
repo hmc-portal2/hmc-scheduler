@@ -105,7 +105,7 @@ function toCourseObject(courseJson) {
   return {
     name: courseName,
     times: timeslots,
-    selected: false,
+    selected: true,
     data: courseJson,
   };
 }
@@ -214,6 +214,7 @@ function addCourse(course, courses, favoriteCourses, fc) {
     favoriteCourses.push(courses.splice(courses.indexOf(course), 1)[0]);
     save('courses', courses);
     save('favoriteCourses', favoriteCourses);
+    document.getElementById('button-generate').disabled = false;
 
     courseNode.getElementsByClassName('atf')[0].style='display: none;';
     courseNode.getElementsByClassName('fta')[0].style='';
@@ -233,6 +234,7 @@ function addCourse(course, courses, favoriteCourses, fc) {
     courses.push(favoriteCourses.splice(favoriteCourses.indexOf(course), 1)[0]);
     save('courses', courses);
     save('favoriteCourses', favoriteCourses);
+    document.getElementById('button-generate').disabled = false;
 
     courseNode.getElementsByClassName('atf')[0].style='';
     courseNode.getElementsByClassName('fta')[0].style='display: none;';
@@ -320,7 +322,7 @@ function drawSchedule(schedule) {
     var supposedHeight = (timeSlot.to - timeSlot.from) * hourHeight;
     var paddingHeight = (supposedHeight - div.offsetHeight) / 2;
     div.style.padding = paddingHeight + 'px 0';
-    div.style.height = (supposedHeight - paddingHeight * 2) + 'px';
+    div.style.height = (supposedHeight /*- paddingHeight * 2*/) + 'px';
   });
 }
 
@@ -1070,14 +1072,21 @@ function addExpandedData(index) {
 
 $("#results-table tbody tr td .schedule-button").click(function() {
   print("selection pushed")
-  //TODO: Add to selected courses
-  //this.disabled = true;
   this.classList += " disabled";
+  courseJson = globalCourseSearch[this.parent.parent.getAttribute('courseIndex')];
+  var courseData = toCourseObject(courseJson);
+  globalCourses.push(courseData);
+  addCourse(courseData, globalCourses, globalFavCourses, false);
+  document.getElementById('button-generate').disabled = false;
 });
 
 
 $("#results-table tbody tr td .favorite-button").click(function() {
   print("selection pushed")
-  //TODO: Add to favorite courses
   this.classList += " disabled";
+  courseJson = globalCourseSearch[this.parent.parent.getAttribute('courseIndex')];
+  var courseData = toCourseObject(courseJson);
+  globalFavCourses.push(courseData);
+  addCourse(courseData, globalCourses, globalFavCourses, true);
 });
+
