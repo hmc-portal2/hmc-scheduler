@@ -1135,6 +1135,7 @@ var sections = [];
 
 function addExpandedData(index) {
   console.log("Index is ", index);
+  console.log("index type", typeof index);
   var courseObj = globalCourseSearch[index];
   print("course obj is ", courseObj);
   
