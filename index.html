@@ -43,39 +43,36 @@
 				<button id="button-left" disabled="disabled" title="(you can also use your arrow keys)">&lt;</button>
 			</h1>
 			
-			<div class="text">
-				Here's a tool to help you arrange the classes you want to take. Give it all the sections of the classes you want, and it'll tell you all compatible permutations. Here's how to use it:
-				<ol>
-					<li>Drag this <a href="#" id="bookmarklet">Scheduler</a> bookmarklet to your <a id="bookmark-helper">bookmarks bar</a> 
-						<span style="font-size: 0.8em">(you need to drag it &mdash; just bookmarking this page will not work!)</span>
-					</li>
-					<li>Go to Portal and click the Scheduler bookmarklet</li>
-					<li>Search for and add all the sections of classes you like</li>
-					<li>Navigate possible schedules using the arrows above!</li>
-				</ol>
-			</div>
-			
-			<h1>Courses 
+			<h1>Active Courses 
 				<span id="credit-counter"></span>
 			</h1>
-                                <label class="check-label">Allow Conflicts<input id="button-conflicts" type="checkbox" title="Section numbers?" /></label>
-                                <label class="check-label">Show Sections<input id="button-sections" type="checkbox" title="Section numbers?" /></label>
+            <label class="check-label">Allow Conflicts<input id="button-conflicts" type="checkbox" title="Conflicts?" /></label>
+            <label class="check-label">Show Sections<input id="button-sections" type="checkbox" title="Section numbers?" /></label>
 				<button id="button-add">+</button>
 				<button id="button-generate" disabled="disabled">Generate</button>
 			<div id="courses-container">
-				<div id="courses-filler" class="text">Click the add button or use the bookmarklet above to get started!</div>
+				<div id="courses-filler" class="text">Search for courses above to get started!</div>
 				<div id="courses">
 					<div class="course hidden template" id="course-template">
 						<div class="course-controls">
 							<input type="checkbox" checked="checked" />
 							<a class="x" href="#" title="Delete">x</a>
 							<a class="c" href="#" title="Change color">c</a>
+							<a class="atf" href="#" title="Move to favorites">&darr;</a>
+							<a class="fta" href="#" title="Move to active" style="display: none;">&uarr;</a>
 						</div>
 						<div class="course-input">
 							<input type="text" placeholder="Course Name" />
 							<textarea placeholder="EXAM010 HM-01 (Staff): MWF 01:15PM-02:30PM"></textarea>
 						</div>
 					</div>
+				</div>
+			</div>
+			
+			<h1>Favorite Courses</h1>
+            <div id="favorite-courses-container">
+				<div id="courses-filler" class="text">Search for courses above to get started!</div>
+				<div id="favorite-courses">
 				</div>
 			</div>
 			
@@ -93,9 +90,9 @@
 			<div class="text">
 				<ul>
 					<li>Be careful with half-semester courses &ndash; if they're at the same time, this'll tell you that they conflict.</li>
-					<li>To show section numbers and professors, use the checkbox next to the Generate button. (If you added classes before this feature was available, you'll need to <a href="#" id="button-clear">delete all of them</a> and add them again via Portal before you can use it.)</li>
+					<li>To show section numbers and professors, use the checkbox next to the Generate button.</li>
 				</ul>
-				Bugs or suggestions? <a href="mailto:aozdemir@hmc.edu">Email me</a> or <a href="https://github.com/hmc-tools/hmc-scheduler" target="_blank">fork it on GitHub</a>!
+				Bugs or suggestions? <a href="mailto:gyancey@hmc.edu">Email me</a> or <a href="https://github.com/hmc-portal2/hmc-scheduler" target="_blank">fork it on GitHub</a>!
 			</div>
 		</div>
 	
@@ -135,97 +132,10 @@
 			</tr>
 		</table>
 		
-		<!-- This code is to be run on Portal pages. All multiple spaces and /* comments */ will be replaced with a single space.
-			 Be careful not to use // line comments, as new lines will be replaced with spaces! -->
-		<script type="text/x-js-bookmarklet">
-			function getValue(node) {
-				/* Remove non-breaking spaces */
-				return (node.firstChild.nodeValue || '').replace(String.fromCharCode(0xA0), ' ').trim();
-			}
-
-			if (!window.Portal) {
-				window.location = __URL__ + '#!bookmarklet';
-				return;
-			}
-			
-			var loader = false;
-			
-			/* Clear this page and replace it with a full-page frame */
-			while (document.body.firstChild)
-				document.body.removeChild(document.body.firstChild);
-			document.body.parentNode.style.height = document.body.style.height = '100%';
-			
-			var frame = document.createElement('iframe');
-			frame.src = '/ICS/Course_Registration/';
-			frame.style.position = 'fixed';
-			frame.style.height = frame.style.width = '100%';
-			frame.style.top = frame.bottom = frame.style.border = 0;
-			frame.onload = function () {
-				var document = frame.contentWindow.document;
-				
-				/* Add the "schedule" links */
-				Array.prototype.filter.call(document.querySelectorAll('.groupedGrid tr:not(.subItem)'), function (node) { 
-					return node.children.length == 10 && node.children[0].nodeName == 'TD';
-				}).forEach(function (row) {
-					var data = {
-						'courseCode': getValue(row.children[1].children[0]),
-						'courseName': getValue(row.children[2]),
-						'professors': Array.prototype.map.call(row.children[3].querySelectorAll('li'), getValue),
-						'seats': getValue(row.children[4]),
-						'status': getValue(row.children[5]),
-						'timeSlots': Array.prototype.map.call(row.children[6].querySelectorAll('li'), getValue),
-						'credits': +getValue(row.children[7]),
-						'startDate': getValue(row.children[8]),
-						'endDate': getValue(row.children[9])
-					};
-
-					var link = document.createElement('a');
-					link.href = '#';
-					link.innerHTML = 'Schedule';
-					link.onclick = function () { 
-						this.style.color = 'black';
-						this.style.textDecoration = 'none';
-						this.innerHTML = 'section added';
-						
-						if (!loader || loader.closed) {
-							loader = window.open(__URL__ + '#!v=' + __VERSION__, 'loader', 'resizable=yes, scrollbars=yes, titlebar=yes, width=1300, height=700, top=10, left=300');
-
-							/* Silly workaround for not being able to set loader.onload */
-							window.addEventListener('message', function (e) {
-								if (e.data == 'loaded') {
-									loader.postMessage(JSON.stringify(data), '*');
-									window.removeEventListener('message', arguments.callee, false);
-								}
-							}, false);
-						} else
-							loader.postMessage(JSON.stringify(data), '*');
-							
-						return false;
-					};
-					row.children[0].insertBefore(link, row.children[0].firstChild);
-				});
-				
-				/* Give some indication that we're modifying the page */
-				document.querySelector('a[title="Course Registration"]').innerHTML += ' + Scheduler';
-			};
-			document.body.appendChild(frame);
-			
-			/* Show a help message if they haven't seen it before. */
-			if ((localStorage.helpMessage || 0) < 1) {
-				localStorage.helpMessage = 1;
-				alert('Search for some classes, and you\'ll see a "schedule" link next to each result. Add every section of a class you\'re interested in, and then you can generate all possible schedules!');
-			}
-			
-			window.onbeforeunload = function () {
-				return 'Portal doesn\'t like it when you refresh or press the back button. Are you sure you want to continue?';
-			};
-			
-		</script>
-		
 		<script src="scheduler.js?v=3" type="text/javascript"></script>
 		<!--<script src="practice.js" type="text/javascript"></script>-->
 		
-		<script type="text/javascript">
+		<!--<script type="text/javascript">
 			addEventListener('load', function () {
 				window._gstc_lt = +new Date;
 				window.GoSquared = {'acct': 'GSN-941508-N'};
@@ -234,6 +144,6 @@
 				g.src = '//d1l6p2sc9645hc.cloudfront.net/tracker.js';
 				document.body.appendChild(g);
 			}, false);
-		</script>
+		</script>-->
 	</body>
 </html>

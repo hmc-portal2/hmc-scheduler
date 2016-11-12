@@ -18,11 +18,13 @@ function randomColor(seed) {
 
 var openNode = false;
 var tabIndex = 0;
-function addCourse(course, i, courses) {
+function addCourse(course, i, courses, favoriteCourses, fc) {
 
   // Make a new course node
   var courseNode = document.getElementById('course-template').cloneNode(true);
   courseNode.classList.remove('template');
+  console.log(course);
+  console.log(courseNode);
   course._node = courseNode;
   course._node.toJSON = function () { return undefined; };
 
@@ -96,11 +98,54 @@ function addCourse(course, i, courses) {
     return false;
   };
 
-  document.getElementById('courses').appendChild(courseNode);
-  document.getElementById('courses-container').classList.remove('empty');
-  document.getElementById('courses-container').classList.add('not-empty');
+  // Active to favorites
+  courseNode.querySelector('.atf').onclick = function () {
+    document.getElementById('favorite-courses').appendChild(courseNode);
+    favoriteCourses.push(courses.splice(courses.indexOf(course), 1)[0]);
+    save('courses', courses);
+    save('favoriteCourses', favoriteCourses);
 
-  document.getElementById('button-generate').disabled = false;
+    courseNode.getElementsByClassName('atf')[0].style='display: none;';
+    courseNode.getElementsByClassName('fta')[0].style='';
+
+    if (courses.length == 0) {
+      document.getElementById('courses-container').classList.add('empty');
+      document.getElementById('courses-container').classList.remove('not-empty');
+    }
+    return false;
+  };
+
+  // Favorite to active
+  courseNode.querySelector('.fta').onclick = function () {
+    document.getElementById('courses').appendChild(courseNode);
+    courses.push(favoriteCourses.splice(favoriteCourses.indexOf(course), 1)[0]);
+    save('courses', courses);
+    save('favoriteCourses', favoriteCourses);
+
+    courseNode.getElementsByClassName('atf')[0].style='';
+    courseNode.getElementsByClassName('fta')[0].style='display: none;';
+
+    if (favoriteCourses.length == 0) {
+      document.getElementById('favorite-courses-container').classList.add('empty');
+      document.getElementById('favorite-courses-container').classList.remove('not-empty');
+    }
+    return false;
+  };
+
+  if(fc) {
+    courseNode.getElementsByClassName('atf')[0].style='display: none;';
+    courseNode.getElementsByClassName('fta')[0].style='';
+    
+    document.getElementById('favorite-courses').appendChild(courseNode);
+    document.getElementById('favorite-courses-container').classList.remove('empty');
+    document.getElementById('favorite-courses-container').classList.add('not-empty');
+  } else {
+    document.getElementById('courses').appendChild(courseNode);
+    document.getElementById('courses-container').classList.remove('empty');
+    document.getElementById('courses-container').classList.add('not-empty');
+
+    document.getElementById('button-generate').disabled = false;
+  }
 }
 
 function timeToHours(h, m, pm) {
@@ -463,6 +508,7 @@ function messageOnce(str) {
 
   // Load data
   var courses = localStorage.courses ? JSON.parse(localStorage.courses) : [];
+  var favoriteCourses = localStorage.favoriteCourses ? JSON.parse(localStorage.favoriteCourses) : [];
   var savedSchedules = localStorage.savedSchedules ? JSON.parse(localStorage.savedSchedules) : {};
   var schedules = [];
   var schedulePosition = 0;
@@ -475,7 +521,7 @@ function messageOnce(str) {
       'times': ''
     };
     courses.push(course);
-    addCourse(course, 0, courses);
+    addCourse(course, 0, courses, favoriteCourses);
     save('courses', courses);
   };
 
@@ -541,7 +587,7 @@ function messageOnce(str) {
   };
 
   // Messages from the bookmarklet
-  window.onmessage = function (e) {
+  /*window.onmessage = function (e) {
     // Extract information from the message
     try {
       var data = JSON.parse(e.data);
@@ -601,11 +647,21 @@ function messageOnce(str) {
 
     save('courses', courses);
     document.getElementById('button-generate').onclick();
-  };
+  };*/
 
   // Display all the courses
   if (courses.length) {
-    courses.forEach(addCourse);
+    for(var i = 0; i < courses.length; i++) {
+      addCourse(courses[i], i, courses, favoriteCourses, false);
+    }
+    document.getElementById('button-generate').onclick();
+  }
+
+  // Display all the favorite courses
+  if (favoriteCourses.length) {
+    for(var i = 0; i < favoriteCourses.length; i++) {
+      addCourse(favoriteCourses[i], i, courses, favoriteCourses, true);
+    }
     document.getElementById('button-generate').onclick();
   }
 
@@ -630,36 +686,15 @@ function messageOnce(str) {
       alert('Pro-tip: Chrome has an option on the Print dialog to disable Headers and Footers, which makes for a prettier schedule!');
     window.print();
   };
-
-  // Make the bookmarklet
-  document.getElementById('bookmarklet').onclick = function () {
-    alert('Drag this link to your bookmarks bar. (If you don\'t see the bookmarks bar, '
-      + (
-           (detection['webkit'] && 'press ' + (detection['mac'] ? 'Cmd' : 'Ctrl') + '-Shift-B to show it')
-        || (detection['firefox'] && 'right-click the tab bar and click "Bookmarks Toolbar" to show it')
-        || 'you\'ll need to enable it. The bookmarklet doesn\'t work if you simply bookmark this page'
-      ) + '.) Then, go to Portal and click the Scheduler bookmarklet!');
-    return false;
-  };
-  document.getElementById('bookmarklet').href = 'javascript:' +
-      escape('(function(__URL__,__VERSION__){'
-        // Replace spaces and /* comments */
-        + document.querySelector('script[type="text/x-js-bookmarklet"]').innerHTML.replace(/(\s+|\/\*[\S\s]*?\*\/)/g, ' ')
-        + '}("' + window.location.toString().split('#')[0] + '", ' + VERSION + '));');
-
-  document.getElementById('bookmark-helper').title =
-           (detection['webkit'] && 'press ' + (detection['mac'] ? 'Cmd' : 'Ctrl') + '-Shift-B to show it')
-        || (detection['firefox'] && 'right-click the tab bar and click "Bookmarks Toolbar" to show it')
-        || '';
-
-  document.getElementById('button-clear').onclick = function () {
+  
+  /*document.getElementById('button-clear').onclick = function () {
     if (confirm('Are you sure you want to delete all the courses you\'ve added?')) {
       save('courses', courses = []);
       window.location.reload();
     }
 
     return false;
-  };
+  };*/
 
   document.getElementById('button-export').onclick = function () {
     var mapOfCourses = mapCourses(schedules[schedulePosition]);
