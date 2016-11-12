@@ -193,14 +193,28 @@ function addCourse(course, courses, favoriteCourses, fc) {
   // Deleting
   courseNode.querySelector('.x').onclick = function () {
     if (confirm('Are you sure you want to delete ' + (course.name || 'this class') + '?')) {
-      courses.splice(courses.indexOf(course), 1);
-      courseNode.parentNode.removeChild(courseNode);
-      save('courses', courses);
-      document.getElementById('button-generate').disabled = false;
+      if(courseNode.querySelector('.atf').style.display == 'none') {
+        favoriteCourses.splice(favoriteCourses.indexOf(course), 1);
+        courseNode.parentNode.removeChild(courseNode);
+        save('favoriteCourses', favoriteCourses);
+        document.getElementById('button-generate').disabled = false;
 
-      if (courses.length == 0) {
-        document.getElementById('courses-container').classList.add('empty');
-        document.getElementById('courses-container').classList.remove('not-empty');
+        if (favoriteCourses.length == 0) {
+          document.getElementById('favorite-courses-container').classList.add('empty');
+          document.getElementById('favorite-courses-container').classList.remove('not-empty');
+        }
+      } else if(courseNode.querySelector('.fta').style.display == 'none') {
+        courses.splice(courses.indexOf(course), 1);
+        courseNode.parentNode.removeChild(courseNode);
+        save('courses', courses);
+        document.getElementById('button-generate').disabled = false;
+
+        if (courses.length == 0) {
+          document.getElementById('courses-container').classList.add('empty');
+          document.getElementById('courses-container').classList.remove('not-empty');
+        }
+      } else {
+        console.log("error deleting: invalid state");
       }
     }
     return false;
