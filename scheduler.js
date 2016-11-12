@@ -43,6 +43,8 @@ function updateSearch() {
     }
     console.log(validCourses);
     globalCourseSearch = validCourses;
+
+    repopulateChart();
 }
 
 // Run updateSearch a tenth of a second slower to avoid race conditions.
@@ -1005,34 +1007,49 @@ function getCaret() {
 
 
 
-function showResult(courseObj) {
+function showResult(courseIndex) {
   //Create a row to hold the results
-  var row = $("<tr>", {courseIndex: 3}); //TODO: Instaed of three, make this an index of the courseObj
-  row.append($("<td>", {text: "ECON104"}));
-  row.append($("<td>", {text: "Financial Economics"}));
-  row.append($("<td>", {text: "Gary Evans"}));
-  row.append($("<td>", {text: "50/500"}));
-  row.append($("<td>", {text: "Open"}));
-  row.append($("<td>", {text: "Never (unless you really want to go to class)"}));
-  row.append($("<td>", {text: "3.0"}));
-  row.append($("<td>", {text: "9/9/9"}));
-  row.append($("<td>", {text: "12/12/12"}));
+  var courseObj = globalCourseSearch[courseIndex];
+  var row = $("<tr>", {courseIndex: courseIndex}); //TODO: Instaed of three, make this an index of the courseObj
+  row.append($("<td>", {text: courseObj['courseNumber'] || 'NO SECTION'}));
+  row.append($("<td>", {text: courseObj['courseTitle'] || 'No title'}));
+  var instructors = '';
+  for(var section of courseObj['courseSections']) for(var instructordata of section['sectionInstructor']) {
+    if(instructordata['lastName']) {
+      if(instructors.length > 0) instructors += ', ';
+      instructors += instructordata['lastName']
+    } else if(instructordata['firstName']) {
+      if(instructors.length > 0) instructors += ', ';
+      instructors += instructordata['firstName']
+    }
+  }
+  row.append($("<td>", {text: instructors}));
+  row.append($("<td>", {text: ''}));
+  row.append($("<td>", {text: ''}));
+  row.append($("<td>", {text: ''}));
+  row.append($("<td>", {text: ''}));
+  row.append($("<td>", {text: ''}));
+  row.append($("<td>", {text: ''}));
   var buttonDiv = $("<td>");
-  buttonDiv.append($("<button>", {text: "Add to Favorites", class:"btn btn-primary favorite-button"}));
-  buttonDiv.append($("<button>", {text: "Add to Schedule", class:"btn btn-success schedule-button"}));
+  buttonDiv.append($("<button>", {text: "Add to Favorites", class:"btn btn-primary favorite-button", courseIndex: courseIndex}));
+  buttonDiv.append($("<button>", {text: "Add to Schedule", class:"btn btn-success schedule-button", courseIndex: courseIndex}));
   row.append(buttonDiv);
   $("#results-table").append(row);
 }
 
 
-
-(function tempPopulateChart() {
-  for(var i = 0; i < 10; i++) {
-    showResult(3);
+function repopulateChart() {
+  $("#results-table").find("tbody").remove();
+  $("#results-table").append($("<tbody>"));
+  for(var i = 0; i < globalCourseSearch.length; i++) {
+    showResult(i);
   }
-}());
+  addButtonListeners();
+}
 
+function addButtonListeners() {
 $("#results-table tbody tr").click(function() {
+  print("row clicked");
   //Expand row
   var newRow = $("<tr>", {class:"open-course"});
   newRow.append($("<td>", {colspan:"100%", class:"expanded"}));
@@ -1051,38 +1068,22 @@ $("#results-table tbody tr").click(function() {
   }
   $(newRow).insertAfter(this);
   this.className += "open";
-  addExpandedData(this.courseIndex); //TODO: Make sure this exists
+
+  //todo:take out
+  updateSearch();
+  tempCourse = getCoursesFromAttributeRegex(filterCoursesByCalendar(globalCourseData, "designator", "SP2017"), 'courseNumber', /.*070.*/)[0];
+  console.log("right function getting called");
+  console.log("this is", this);
+  console.log('course index is ', this.getAttribute('courseindex'));
+  addExpandedData(this.getAttribute('courseindex'));
 })
 
 
-
-var courses = [1,2,3]; //TODO: Fix this!
-
-
-function addExpandedData(index) {
-  var courseObj = courses[index]; //TODO: Make sure this gets an actual course object
-  var nameLine = "<p>Financial Econ" + "(" + "ECON104" + ")</p>";
-  var profLine = $("<p>", {text:"Prof: " + "Gary Evans"});
-  var deptLine = "<p>Dept:" + "Economics</p>";
-  var timeLine = "<p>Offered:" + "Spring 2017" + ": " + "1/1/1" + " through " + "2/2/2</p>";
-  var scheduleLine = "<p>Times:" + "T/R 2:45-5:30PM</p>";
-  var availabilityLine = "<p>Open: " + "3" + " out of " + "15" + " seats " + " available</p>";
-  var newRow = $(".expanded")[0]
-  print($(".expanded"));
-  $(nameLine).appendTo(newRow);
-  $(profLine).appendTo(newRow);
-  $(deptLine).appendTo(newRow);
-  $(timeLine).appendTo(newRow);
-  $(scheduleLine).appendTo(newRow);
-  $(availabilityLine).appendTo(newRow);
-  print("func got called");
-}
-
-
-$("#results-table tbody tr td .schedule-button").click(function() {
+$(".schedule-button").click(function() {
   print("selection pushed")
   this.classList += " disabled";
-  courseJson = globalCourseSearch[this.parent.parent.getAttribute('courseIndex')];
+  console.log(this.parent);
+  courseJson = globalCourseSearch[this.getAttribute('courseIndex')];
   var courseData = toCourseObject(courseJson);
   globalCourses.push(courseData);
   addCourse(courseData, globalCourses, globalFavCourses, false);
@@ -1090,12 +1091,169 @@ $("#results-table tbody tr td .schedule-button").click(function() {
 });
 
 
-$("#results-table tbody tr td .favorite-button").click(function() {
+$(".favorite-button").click(function() {
   print("selection pushed")
   this.classList += " disabled";
-  courseJson = globalCourseSearch[this.parent.parent.getAttribute('courseIndex')];
+  courseJson = globalCourseSearch[this.getAttribute('courseIndex')];
   var courseData = toCourseObject(courseJson);
   globalFavCourses.push(courseData);
   addCourse(courseData, globalCourses, globalFavCourses, true);
 });
+}
+
+
+var courses = [1,2,3];
+
+
+
+// var tempCourse = {
+//             "courseGuid": "7f3bed6f437b4a9bb7de22c1bfef7270",
+//             "courseNumber": "ABROAD   HM",
+//             "courseSections": [],
+//             "courseTitle": "Semester Abroad",
+//             "departments": [
+//                 {
+//                     "departmentGuid": "74dc3f18d80d41bb8f9b65fbbf74ceb7",
+//                     "externalId": "HMID",
+//                     "lastModified": "2016-09-14T20:48:18.753733Z",
+//                     "name": "Interdepartmental Course",
+//                     "shortName": "HID"
+//                 }
+//             ],
+//             "externalId": "ABROAD   HM",
+//             "facilityGuid": "768193214f0946d99345c1036f46c9d1",
+//             "institutionGuid": "20108cbd4ff748adaa9873e5ff310793",
+//             "lastModified": "2016-09-14T20:48:19.965841Z",
+//             "programs": [
+//                 {
+//                     "externalId": "HMID",
+//                     "lastModified": "2016-10-04T18:54:51.352202Z",
+//                     "name": "ASAM",
+//                     "postsecondaryProgramLevel": "Major",
+//                     "programGuid": "734e54c39760430888ec419f55770769"
+//                 }
+//             ],
+//             "subjectAbbreviation": "HMID"
+//         }; //TODO: Fix this!
+
+var sections = [];
+
+
+
+
+
+function addExpandedData(index) {
+  console.log("Index is ", index);
+  var courseObj = globalCourseSearch[index];
+  print("course obj is ", courseObj);
+  
+  var title = ""
+  if (courseObj['courseTitle']) {
+    title = courseObj['courseTitle']
+  }   
+  
+  var code = ""
+  if (courseObj['courseNumber']) {
+    code = courseObj['courseNumber']
+  }
+
+  var dept = "" //DO THIS!!!
+  if (courseObj['departments']) {
+    jQuery.each(courseObj['departments'], function() {
+      if (this['name']) {
+        dept += this['name'] + ' ';
+      }
+    })
+    courseTitle = courseObj['courseTitle']
+  }
+
+  var nameLine = "<p>" + title + " (" + code + ")</p>";
+  var deptLine = "<p>Dept: " + dept + "</p>";
+ 
+  
+  var newRow = $(".expanded")[0];
+  $(nameLine).appendTo(newRow);
+  $(deptLine).appendTo(newRow);
+
+
+
+  //Loop through section-specific info
+  var index = 1;
+  jQuery.each(courseObj['courseSections'], function() {
+
+
+
+  var prof = "";
+  if (this['sectionInstructor']) {
+    var sectionInstructors = this['sectionInstructor']
+    jQuery.each(sectionInstructors, function() {
+      var actualName = this['firstName'];
+      prof += actualName + ' ';
+    });
+  }
+
+
+
+  var term = "";
+  var start = "";
+  var end = "";
+  if (this['calendarSessions']) {
+    var session = this['calendarSessions'][0]
+    if (session['externalId']) {
+      term = session['externalId']
+    }
+    if (session['beginDate']) {
+      start = session['beginDate']
+    }
+    if (session['endDate']) {
+      end = session['endDate']
+    }
+  }
+
+  
+  var times = ""
+  if (this['courseSectionSchedule']) {
+    jQuery.each(this['courseSectionSchedule'], function() {
+      if(this['classMeetingDays']) {
+        times += this['classMeetingDays'].replace(/-/g, '');
+      if (this['classBeginningTime']) {
+        times += ': ' + toAmPmTime(this['classBeginningTime']);
+      }
+      if (this['classEndingTime']) {
+        times += '-' + toAmPmTime(this['classEndingTime']);
+      }
+    }
+
+
+
+    });
+  }
+
+  var filled = "??"
+  if (this['currentEnrollment']) {
+    filled = this['currentEnrollment'];
+  }
+
+  var capacity = "??"
+  if (this['capacity']) {
+    capacity = this['capacity'];
+  }
+  index++;
+
+    //Section string
+
+var sectionLine = $("<p>", {text:"Section: " + index});
+var profLine = $("<p>", {text:"Prof: " + prof});
+var timeLine = "<p>Offered: " + term + ": " + start + " through " + end + "</p>";
+var scheduleLine = "<p>Times: " + times + "</p>";
+var availabilityLine = "<p>" + filled + " out of " + capacity + " seats filled" + "</p>";
+
+  $("<br/>").appendTo(newRow);
+  $(sectionLine).appendTo(newRow);
+  $(profLine).appendTo(newRow);
+  $(timeLine).appendTo(newRow);
+  $(scheduleLine).appendTo(newRow);
+  $(availabilityLine).appendTo(newRow);
+  });
+}
 
