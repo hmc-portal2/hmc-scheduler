@@ -1022,8 +1022,8 @@ function showResult(courseIndex) {
   row.append($("<td>", {text: ''}));
   row.append($("<td>", {text: ''}));
   var buttonDiv = $("<td>");
-  buttonDiv.append($("<button>", {text: "Add to Favorites", class:"btn btn-primary favorite-button"}));
-  buttonDiv.append($("<button>", {text: "Add to Schedule", class:"btn btn-success schedule-button"}));
+  buttonDiv.append($("<button>", {text: "Add to Favorites", class:"btn btn-primary favorite-button", courseIndex: courseIndex}));
+  buttonDiv.append($("<button>", {text: "Add to Schedule", class:"btn btn-success schedule-button", courseIndex: courseIndex}));
   row.append(buttonDiv);
   $("#results-table").append(row);
 }
@@ -1035,9 +1035,10 @@ function repopulateChart() {
   for(var i = 0; i < globalCourseSearch.length; i++) {
     showResult(i);
   }
+  addButtonListeners();
 }
 
-
+function addButtonListeners() {
 $("#results-table tbody tr").click(function() {
   //Expand row
   var newRow = $("<tr>", {class:"open-course"});
@@ -1061,6 +1062,28 @@ $("#results-table tbody tr").click(function() {
 })
 
 
+$(".schedule-button").click(function() {
+  print("selection pushed")
+  this.classList += " disabled";
+  console.log(this.parent);
+  courseJson = globalCourseSearch[this.getAttribute('courseIndex')];
+  var courseData = toCourseObject(courseJson);
+  globalCourses.push(courseData);
+  addCourse(courseData, globalCourses, globalFavCourses, false);
+  document.getElementById('button-generate').disabled = false;
+});
+
+
+$(".favorite-button").click(function() {
+  print("selection pushed")
+  this.classList += " disabled";
+  courseJson = globalCourseSearch[this.getAttribute('courseIndex')];
+  var courseData = toCourseObject(courseJson);
+  globalFavCourses.push(courseData);
+  addCourse(courseData, globalCourses, globalFavCourses, true);
+});
+}
+
 
 var courses = [1,2,3]; //TODO: Fix this!
 
@@ -1083,25 +1106,4 @@ function addExpandedData(index) {
   $(availabilityLine).appendTo(newRow);
   print("func got called");
 }
-
-
-$(".schedule-button").click(function() {
-  print("selection pushed")
-  this.classList += " disabled";
-  courseJson = globalCourseSearch[this.parent.parent.getAttribute('courseIndex')];
-  var courseData = toCourseObject(courseJson);
-  globalCourses.push(courseData);
-  addCourse(courseData, globalCourses, globalFavCourses, false);
-  document.getElementById('button-generate').disabled = false;
-});
-
-
-$(".favorite-button").click(function() {
-  print("selection pushed")
-  this.classList += " disabled";
-  courseJson = globalCourseSearch[this.parent.parent.getAttribute('courseIndex')];
-  var courseData = toCourseObject(courseJson);
-  globalFavCourses.push(courseData);
-  addCourse(courseData, globalCourses, globalFavCourses, true);
-});
 
