@@ -1,5 +1,7 @@
 var globalCourseData = [];
 var globalCourseSearch = [];
+var globalCourses;
+var globalFavCourses;
 
 function lingkCallback(json) {
   globalCourseData = json['data'];
@@ -10,7 +12,7 @@ function updateSearch() {
   globalCourseSearch = globalCourseData;
   globalCourseSearch = filterCoursesByCalendar(globalCourseSearch, "designator", "SP2017");
   globalCourseSearch = getCourseFromAttributeRegex(globalCourseSearch, "courseNumber", /.*070.*/);
-  for(var data of globalCourseSearch) console.log(toCourseObject(data).times);
+  for(var data of globalCourseSearch) addCourse(toCourseObject(data), globalCourses, globalFavCourses);
 }
 
 function toAmPmTime(timestring) {
@@ -559,6 +561,8 @@ function messageOnce(str) {
   // Load data
   var courses = localStorage.courses ? JSON.parse(localStorage.courses) : [];
   var favoriteCourses = localStorage.favoriteCourses ? JSON.parse(localStorage.favoriteCourses) : [];
+  globalCourses = courses;
+  globalFavCourses = favoriteCourses;
   var savedSchedules = localStorage.savedSchedules ? JSON.parse(localStorage.savedSchedules) : {};
   var schedules = [];
   var schedulePosition = 0;
