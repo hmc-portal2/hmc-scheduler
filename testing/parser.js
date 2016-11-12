@@ -1,28 +1,15 @@
-/*
- *
- *
- */
-
-//File
-
-//JSON.p
-
-
-/**
- * Returns a string version
- *
- */
-
 var COURSE_JSON_URL = "//portal2.yancey.io/courses.json";
-var response;
 
 function lingkCallback(json) {
+    // THIS FUNCTION IS CALLED BY AN IMPORTED JSON FILE
+    // NEVER ELSWHERE.
     response = json["data"];
     router(response);
 }
 
 function router(response) {
-   // THIS IS THE MAIN FUNCTION. ANY QUERRYING MUST BE CALLED FROM HERE. 
+    // THIS IS THE MAIN FUNCTION. ANY QUERRYING MUST BE CALLED FROM HERE.
+    console.log(getCourseFromAttributeRegex(response, "courseNumber", /.*070.*/));
 }
  
 function getCourseSections(course) {
@@ -66,12 +53,24 @@ function filterSectionsByCalendar(sections, attribute, expected) {
 function getCoursesFromAttribute(response, attribute, expected) {
     var possibleCourses = [];
     for(key of response) {
-        //console.log("Test: " + key[attribute]);
         if(key[attribute] === expected) {
             possibleCourses.push(key);
         }
     }
-    return possibleCourses
+    return possibleCourses;
+}
+
+function getCourseFromAttributeRegex(response, attribute, expression) {
+    var possibleCourses = [];
+    for(key of response) {
+        if(key[attribute]) {
+            console.log(key[attribute]);
+            if(key[attribute].match(expression)) {
+                possibleCourses.push(key);
+            }
+        }
+    }
+    return possibleCourses;
 }
 
 function attributeFilter(response, attribute, expected, mustBe) {
@@ -87,24 +86,3 @@ function attributeFilter(response, attribute, expected, mustBe) {
     }
     return filtered;
 }
-
-//var response = jQuery.getScript(COURSE_JSON_URL);
-
-/*
-function getJSONFromSource(url) {
-    var httpRequest = new XMLHttpRequest();
-    httpRequest.responseType = "json";
-    httpRequest.open("GET", COURSE_JSON_URL, true);
-    httpRequest.send();
-    
-    httpRequest.addEventListener("readystatechange", processRequest, false)
-    var reponse = processRequest(httpRequest)
-    return JSON.parse(
-}
-
-function processRequest(request) {
-    if(request.readyState == 4 && request.status == 200) {
-        
-    }
-}
-*/
