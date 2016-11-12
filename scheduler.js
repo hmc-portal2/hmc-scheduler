@@ -903,7 +903,7 @@ function attributeFilter(response, attribute, expected, mustBe) {
   //TODO: Call some function to get this data from portal.
   //PLACEHOLDER:
   createDropdownBlock("Course Term", "course-terms", "[Select]");
-  var terms = ["SP2017", "FA2016", "never"];
+  var terms = ["SP2017", "FA2016", "SP2016"];
   createDropdown("#course-terms", terms);
 }());
 
@@ -962,8 +962,8 @@ function attributeFilter(response, attribute, expected, mustBe) {
 
 (function availability() {
   //TODO: get actual building
-  var terms = ["No", "Yes"];
-  createDropdownBlock("Allow Conflicts", "conflict", "No");
+  createDropdownBlock("Show Conflicts", "conflict", "Yes");
+  var terms = ["Yes", "No"];
   createDropdown("#conflicts", terms);
 }());
 
