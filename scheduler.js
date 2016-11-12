@@ -415,6 +415,11 @@ function save(type, arr) {
   lastModified = localStorage.lastModified = Date.now();
   localStorage[type] = JSON.stringify(arr);
 }
+
+
+
+
+
 function messageOnce(str) {
   if (localStorage['message_' + str])
     return false;
@@ -666,3 +671,115 @@ function messageOnce(str) {
   if (window.opener)
     window.opener.postMessage('loaded', '*');
 }());
+
+
+
+
+
+
+
+(function getCourseTerms() {
+  //TODO: Call some function to get this data from portal.
+  //PLACEHOLDER:
+  createDropdownBlock("Course Term", "course-terms", "Spring!");
+  var terms = ["spring17", "fall17", "never"];
+  createDropdown("#course-terms", terms);
+}());
+
+
+
+(function courseNumberStart() {
+  //TODO: Call some function to get this data from portal.
+  //PLACEHOLDER:
+  var terms = ["2:00", "3:00"];
+  createDropdownBlock("Course Number Start", "num-start", "All");
+  createDropdown("#num-start", terms);
+}());
+
+
+(function courseNumberEnd() {
+  //TODO: Call some function to get this data from portal.
+  //PLACEHOLDER:
+  var terms = ["2:00", "3:00"];
+  createDropdownBlock("Course Number End", "num-end", "All");
+  createDropdown("#num-end", terms);
+}());
+
+
+(function startTime() {
+  //TODO: Call some function to get this data from portal.
+  //PLACEHOLDER:
+  var terms = ["2:00", "3:00"];
+  createDropdownBlock("Time Start", "time-start", "All");
+  createDropdown("#time-start", terms);
+}());
+
+
+(function endTime() {
+  //TODO: Call some function to get this data from portal.
+  //PLACEHOLDER:
+  var terms = ["2:00", "3:00"];
+  createDropdownBlock("Time End", "time-end", "All");
+  createDropdown("#time-end", terms);
+}());
+
+
+(function campus() {
+  var terms = ["Mudd", "Pomona"];
+  createDropdownBlock("Campus", "campus", "All");
+  createDropdown("#campus", terms);
+}());
+
+
+// (function building() {
+//   //TODO: get actual building
+//   var terms = ["Shan", "Parsons"];
+//   createDropdownBlock("Building", "building", "All");
+//   createDropdown("#building", terms);
+// }());
+
+
+(function availability() {
+  //TODO: get actual building
+  var terms = ["All", "Open", "Full"];
+  createDropdownBlock("Availability", "availability", "All");
+  createDropdown("#availability", terms);
+}());
+
+
+
+
+
+
+
+
+
+
+function createDropdownBlock(label, id, defaultText) {
+  var div = $("<div>", {class: "dropdown my-dropdown col-sm-4", text: label});
+  var button = $("<button>", {class: "btn btn-primary dropdown-toggle dropdown-button", text: defaultText + "  ", "data-toggle": "dropdown"}); 
+  var caret = $("<span>", {class: "caret"});
+  button.append(caret);
+  div.append(button);
+  var list = $("<ul>", {class: "dropdown-menu", id: id});
+  div.append(list);
+  $("#search-area").append(div);
+}
+
+
+function print(str) {
+  console.log(str);
+}
+
+
+function createDropdown(elementID, namesList) {
+  var term;
+    for (term of namesList) {
+    var newListItem = $("<li>");
+    var newLink = $("<a>", {text: term});
+    newListItem.append(newLink);
+    $(elementID).append(newListItem);
+  }
+}
+
+//TODO: How to store variable when clicked!

@@ -143,6 +143,24 @@ td {
 	margin: 0 0 2em;
 }
 
+
+#search-area {
+	margin: 20px;
+	background-color: lightgray;
+	padding: 20px;
+}
+
+.my-dropdown {
+	padding:5px;
+}
+
+.dropdown-button {
+	margin: 5px;
+}
+
+
+
+
 #demo-textarea {
 	height: 5em;
 	padding: 3px;
