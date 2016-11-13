@@ -1050,11 +1050,12 @@ function repopulateChart() {
 function addButtonListeners() {
 $("#results-table tbody tr").click(function() {
   print("row clicked");
+  console.log("this is:1 ", this);
   //Expand row
   var newRow = $("<tr>", {class:"open-course"});
-  newRow.append($("<td>", {colspan:"100%", class:"expanded"}));
   var openRow = null;
   $("#results-table").children('tbody').each(function() {
+    console.log("this is:1 ", this);/
     $(".expanded").remove();
     if ($(".open")[0]) {
       //If open, remove it
@@ -1063,10 +1064,17 @@ $("#results-table tbody tr").click(function() {
       openRow = openBox;
     }
   });
+  console.log("this is:2 ", this);
   if (openRow == this) {
     return;
   }
-  $(newRow).insertAfter(this);
+  console.log("this is:3 ", this);
+  newRow.append($("<td>", {colspan:"100%", class:"expanded"}));
+  console.log("new row is", newRow);
+  console.log("this is", this);
+  
+  newRow.after(this);
+  console.log("next is", this.next);
   this.className += "open";
 
   //todo:take out
@@ -1145,22 +1153,19 @@ var sections = [];
 
 
 function addExpandedData(index) {
-  console.log("Index is ", index);
-  console.log("index type", typeof index);
   var courseObj = globalCourseSearch[index];
-  print("course obj is ", courseObj);
   
-  var title = ""
+  var title = "";
   if (courseObj['courseTitle']) {
     title = courseObj['courseTitle']
   }   
   
-  var code = ""
+  var code = "";
   if (courseObj['courseNumber']) {
     code = courseObj['courseNumber']
   }
 
-  var dept = "" //DO THIS!!!
+  var dept = "";
   if (courseObj['departments']) {
     jQuery.each(courseObj['departments'], function() {
       if (this['name']) {
@@ -1173,8 +1178,9 @@ function addExpandedData(index) {
   var nameLine = "<p>" + title + " (" + code + ")</p>";
   var deptLine = "<p>Dept: " + dept + "</p>";
  
-  
+  console.log("pre-new row", $(".expanded"));
   var newRow = $(".expanded")[0];
+  console.log('new row (again)', newRow);
   $(nameLine).appendTo(newRow);
   $(deptLine).appendTo(newRow);
 
