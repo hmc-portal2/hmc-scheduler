@@ -984,12 +984,6 @@ function createDropdownBlock(label, id, defaultText) {
   $("#search-area").append(div);
 }
 
-
-function print(str) {
-  console.log(str);
-}
-
-
 function createDropdown(elementID, namesList) {
   var term;
     for (term of namesList) {
@@ -1079,7 +1073,6 @@ function repopulateChart() {
 
 function addButtonListeners() {
 $("#results-table tbody tr").click(function() {
-  print("row clicked");
   //Expand row
   var newRow = $("<tr>", {class:"open-course"});
   newRow.append($("<td>", {colspan:"100%", class:"expanded"}));
@@ -1098,21 +1091,14 @@ $("#results-table tbody tr").click(function() {
   }
   $(newRow).insertAfter(this);
   this.className += "open";
-
   //todo:take out
-  updateSearch();
   tempCourse = getCoursesFromAttributeRegex(filterCoursesByCalendar(globalCourseData, "designator", "SP2017"), 'courseNumber', /.*070.*/)[0];
-  console.log("right function getting called");
-  console.log("this is", this);
-  console.log('course index is ', this.getAttribute('courseindex'));
   addExpandedData(this.getAttribute('courseindex'));
 })
 
-
 $(".schedule-button").click(function() {
-  print("selection pushed")
+  event.stopPropagation();
   this.classList += " disabled";
-  console.log(this.parent);
   courseJson = globalCourseSearch[this.getAttribute('courseIndex')];
   var courseData = toCourseObject(courseJson);
   globalCourses.push(courseData);
@@ -1123,7 +1109,7 @@ $(".schedule-button").click(function() {
 
 
 $(".favorite-button").click(function() {
-  print("selection pushed")
+  event.stopPropagation();
   this.classList += " disabled";
   courseJson = globalCourseSearch[this.getAttribute('courseIndex')];
   var courseData = toCourseObject(courseJson);
@@ -1135,39 +1121,6 @@ $(".favorite-button").click(function() {
 
 
 var courses = [1,2,3];
-
-
-
-// var tempCourse = {
-//             "courseGuid": "7f3bed6f437b4a9bb7de22c1bfef7270",
-//             "courseNumber": "ABROAD   HM",
-//             "courseSections": [],
-//             "courseTitle": "Semester Abroad",
-//             "departments": [
-//                 {
-//                     "departmentGuid": "74dc3f18d80d41bb8f9b65fbbf74ceb7",
-//                     "externalId": "HMID",
-//                     "lastModified": "2016-09-14T20:48:18.753733Z",
-//                     "name": "Interdepartmental Course",
-//                     "shortName": "HID"
-//                 }
-//             ],
-//             "externalId": "ABROAD   HM",
-//             "facilityGuid": "768193214f0946d99345c1036f46c9d1",
-//             "institutionGuid": "20108cbd4ff748adaa9873e5ff310793",
-//             "lastModified": "2016-09-14T20:48:19.965841Z",
-//             "programs": [
-//                 {
-//                     "externalId": "HMID",
-//                     "lastModified": "2016-10-04T18:54:51.352202Z",
-//                     "name": "ASAM",
-//                     "postsecondaryProgramLevel": "Major",
-//                     "programGuid": "734e54c39760430888ec419f55770769"
-//                 }
-//             ],
-//             "subjectAbbreviation": "HMID"
-//         }; //TODO: Fix this!
-
 var sections = [];
 
 
@@ -1175,21 +1128,19 @@ var sections = [];
 
 
 function addExpandedData(index) {
-  console.log("Index is ", index);
   var courseObj = globalCourseSearch[index];
-  print("course obj is ", courseObj);
   
-  var title = ""
+  var title = "";
   if (courseObj['courseTitle']) {
     title = courseObj['courseTitle']
   }   
   
-  var code = ""
+  var code = "";
   if (courseObj['courseNumber']) {
     code = courseObj['courseNumber']
   }
 
-  var dept = "" //DO THIS!!!
+  var dept = "";
   if (courseObj['departments']) {
     jQuery.each(courseObj['departments'], function() {
       if (this['name']) {
@@ -1201,8 +1152,6 @@ function addExpandedData(index) {
 
   var nameLine = "<p>" + title + " (" + code + ")</p>";
   var deptLine = "<p>Dept: " + dept + "</p>";
- 
-  
   var newRow = $(".expanded")[0];
   $(nameLine).appendTo(newRow);
   $(deptLine).appendTo(newRow);
@@ -1220,7 +1169,10 @@ function addExpandedData(index) {
     var sectionInstructors = this['sectionInstructor']
     jQuery.each(sectionInstructors, function() {
       var actualName = this['firstName'];
-      prof += actualName + ' ';
+      if (prof != "") {
+        prof += ", "
+      }
+      prof += actualName;
     });
   }
 
@@ -1270,7 +1222,7 @@ function addExpandedData(index) {
   if (this['capacity']) {
     capacity = this['capacity'];
   }
-  index++;
+  
 
     //Section string
 
@@ -1286,6 +1238,8 @@ var availabilityLine = "<p>" + filled + " out of " + capacity + " seats filled" 
   $(timeLine).appendTo(newRow);
   $(scheduleLine).appendTo(newRow);
   $(availabilityLine).appendTo(newRow);
+
+  index++;
   });
 }
 
