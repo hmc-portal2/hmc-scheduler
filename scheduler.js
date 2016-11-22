@@ -1015,7 +1015,7 @@ function getCaret() {
 function showResult(courseIndex) {
   //Create a row to hold the results
   var courseObj = globalCourseSearch[courseIndex];
-  var row = $("<tr>", {courseIndex: courseIndex}); //TODO: Instaed of three, make this an index of the courseObj
+  var row = $("<tr>", {courseIndex: courseIndex});
   row.append($("<td>", {text: courseObj['courseNumber'] || 'NO SECTION'}));
   row.append($("<td>", {text: courseObj['courseTitle'] || 'No title'}));
   var instructors = '';
@@ -1226,18 +1226,30 @@ function addExpandedData(index) {
 
     //Section string
 
-var sectionLine = $("<p>", {text:"Section: " + index});
-var profLine = $("<p>", {text:"Prof: " + prof});
-var timeLine = "<p>Offered: " + term + ": " + start + " through " + end + "</p>";
-var scheduleLine = "<p>Times: " + times + "</p>";
-var availabilityLine = "<p>" + filled + " out of " + capacity + " seats filled" + "</p>";
+  var sectionLine = $("<td>", {text:"Section: " + index});
+  var profLine = $("<td>", {text:"Prof: " + prof});
+  //var timeLine = "<td>Offered: " + term + ": " + start + " through " + end + "</td>";
+  var scheduleLine = "<td>Times: " + times + "</td>";
+  var availabilityLine = "<td>" + filled + " out of " + capacity + " seats filled" + "</td>";
 
-  $("<br/>").appendTo(newRow);
-  $(sectionLine).appendTo(newRow);
-  $(profLine).appendTo(newRow);
-  $(timeLine).appendTo(newRow);
-  $(scheduleLine).appendTo(newRow);
-  $(availabilityLine).appendTo(newRow);
+
+  var subRow = $("<tr>");
+  subRow.append(sectionLine);
+  subRow.append(profLine);
+ // subRow.append(timeLine);
+  subRow.append(scheduleLine);
+  subRow.append(availabilityLine);
+
+
+  //newRow.append($("<td>", {text: courseObj['courseNumber'] || 'NO SECTION'}));
+
+  $(subRow).appendTo(newRow);
+//  $("<br/>").appendTo(newRow);
+  // $(sectionLine).appendTo(newRow);
+  // $(profLine).appendTo(newRow);
+  // $(timeLine).appendTo(newRow);
+  // $(scheduleLine).appendTo(newRow);
+  // $(availabilityLine).appendTo(newRow);
 
   index++;
   });
