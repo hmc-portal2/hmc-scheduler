@@ -18,7 +18,7 @@ function updateSearch() {
     // Implement title regex
     var titleRe;
     if(!useTitleRegex) {
-        title = title.replace(/[\-\[\]\/\{\}\(\)\+\.\\\^\$\|]/g, "\\$&").replace(/\*/, ".*").replace(/\?/, ".");
+        title = title.replace(/[\-\[\]\/\{\}\(\)\+\.\\\^\$\|]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".");
         titleRe = RegExp(".*" + title + ".*", "i");
     }
     else {
@@ -28,7 +28,7 @@ function updateSearch() {
     // Implement code regex
     var codeRe;
     if(!useCodeRegex) {
-        code = code.replace(/[\-\[\]\/\{\}\(\)\+\.\\\^\$\|]/g, "\\$&").replace(/\*/, ".*").replace(/\?/, ".");
+        code = code.replace(/[\-\[\]\/\{\}\(\)\+\.\\\^\$\|]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".");
         codeRe = RegExp(".*" + code + ".*", "i");
     }
     else {
