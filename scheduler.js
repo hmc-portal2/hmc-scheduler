@@ -1055,8 +1055,11 @@ function showResult(courseIndex) {
   row.append($("<td>", {text: timeslots}));
   //row.append($("<td>", {text: ''}));
   var buttonDiv = $("<td>");
-  buttonDiv.append($("<button>", {text: "Add to Schedule", class:"btn btn-success schedule-button", courseIndex: courseIndex}));
-  buttonDiv.append($("<button>", {text: "Add to Favorites", class:"btn btn-primary favorite-button", courseIndex: courseIndex}));
+  buttonDiv.append($("<button>", {text: "Schedule", class:"btn btn-sm btn-success schedule-button", courseIndex: courseIndex}));
+  var favButton = $("<button>", {class:"btn btn-sm btn-primary favorite-button", courseIndex: courseIndex});
+  favButton.append("<i class='glyphicon glyphicon-star-empty' style='font-size:16px;'></i>");
+  buttonDiv.append(favButton);
+
   row.append(buttonDiv);
   $("#results-table").append(row);
 }
@@ -1150,11 +1153,15 @@ function addExpandedData(index) {
     courseTitle = courseObj['courseTitle']
   }
 
-  var nameLine = "<p>" + title + " (" + code + ")</p>";
-  var deptLine = "<p>Dept: " + dept + "</p>";
+  var nameLine = "<h4>" + title + " (" + code + ")</h4>";
+  var deptLine = "<h5>Dept: " + dept + "</h5>";
   var newRow = $(".expanded")[0];
+  var subTable = $("<table>", {class: "table table-bordered"});
+  var header = '<thead><th>Section</th><th>Professor</th><th>Times</th><th>Dates</th><th>Seats Filled</th></thead>'
+  $(header).appendTo(subTable)
   $(nameLine).appendTo(newRow);
   $(deptLine).appendTo(newRow);
+  $(subTable).appendTo(newRow);
 
 
 
@@ -1166,17 +1173,25 @@ function addExpandedData(index) {
 
   var prof = "";
   if (this['sectionInstructor']) {
-    var sectionInstructors = this['sectionInstructor']
-    jQuery.each(sectionInstructors, function() {
-      var actualName = this['firstName'];
-      if (prof != "") {
-        prof += ", "
+    console.log("IN THE LOOP!!!");
+    var instructordata = this['sectionInstructor'];
+    console.log(instructordata);
+    jQuery.each(instructordata, function() {
+      console.log("Looping through profs");
+      if(this['lastName']) {
+        if(prof.length > 0) {
+          prof += ', ';
+        }
+        console.log('got one!');
+        prof += this['lastName']
+      } else if(this['firstName']) {
+        if(prof.length > 0) {
+          prof += ', ';
+        }
+        prof += this['firstName']
       }
-      prof += actualName;
     });
   }
-
-
 
   var term = "";
   var start = "";
@@ -1226,30 +1241,19 @@ function addExpandedData(index) {
 
     //Section string
 
-  var sectionLine = $("<td>", {text:"Section: " + index});
-  var profLine = $("<td>", {text:"Prof: " + prof});
-  //var timeLine = "<td>Offered: " + term + ": " + start + " through " + end + "</td>";
-  var scheduleLine = "<td>Times: " + times + "</td>";
-  var availabilityLine = "<td>" + filled + " out of " + capacity + " seats filled" + "</td>";
-
+  var sectionLine = "<td>" + index + "</td>";
+  var profLine = "<td>" + prof + "</td>";
+  var scheduleLine = "<td>" + times + "</td>";
+  var timeLine = "<td>" + start + " - " + end + "</td>";
+  var availabilityLine = "<td>" + filled + "/" + capacity + " seats</td>";
 
   var subRow = $("<tr>");
   subRow.append(sectionLine);
   subRow.append(profLine);
- // subRow.append(timeLine);
   subRow.append(scheduleLine);
+  subRow.append(timeLine);
   subRow.append(availabilityLine);
-
-
-  //newRow.append($("<td>", {text: courseObj['courseNumber'] || 'NO SECTION'}));
-
-  $(subRow).appendTo(newRow);
-//  $("<br/>").appendTo(newRow);
-  // $(sectionLine).appendTo(newRow);
-  // $(profLine).appendTo(newRow);
-  // $(timeLine).appendTo(newRow);
-  // $(scheduleLine).appendTo(newRow);
-  // $(availabilityLine).appendTo(newRow);
+  $(subRow).appendTo(subTable);
 
   index++;
   });
