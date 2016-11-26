@@ -6,43 +6,145 @@ var globalTerm;
 
 function lingkCallback(json) {
   globalCourseData = json['data'];
+  getAllDepartments();
+  addExtraAttributes();
   updateSearch();
 }
 
+
+
+function getAllDepartments() {
+  var depts = {};
+  for(key of globalCourseData) {
+  //TODO: Get rid of this later
+    var dept = "";
+    if (key['departments']) {
+      jQuery.each(key['departments'], function() {
+        if (this['name']) {
+          dept += this['name'] + ' ';
+        }
+      })
+      if (!(dept in depts)) {
+        depts[dept] = 1;
+      } else {
+        depts[dept] = depts[dept] + 1;
+      }
+    }
+  }
+}
+
+
+
+function addExtraAttributes() {
+  for(key of globalCourseData) {
+
+    //Add the campuz the course is on to its attributes
+    //Currently, courses which are jointly taught (JT) will not show up no matter which college you select.
+    if (key['courseNumber']) {
+      var courseCode = key['courseNumber'].slice(-2);
+      var college = "";
+      switch (courseCode) {
+        case 'HM': 
+          college = "Harvey Mudd";
+          break;
+        case 'CG': 
+          college = "Claremont Graduate University";
+          break;
+        case 'CM': 
+          college = "Claremont McKenna";
+          break;
+        case 'SC': 
+          college = "Scripps";
+          break;
+        case 'PO': 
+          college = "Pomona";
+          break;
+        case 'PZ': 
+          college = "Pitzer";
+          break;
+        default: 
+          break;
+      }
+      key.campus = college;
+    }
+    // Add its filled status (whether or not there are empty seats left)
+    // Currently, full is false if there is even 1 unfilled section
+
+    // Default: starts out as true (and will remain that way if there is no data on fullness)
+    key.full = true;
+    for (section of key['courseSections']) {
+      if (section['capacity'] && section['currentEnrollment'] && (section['currentEnrollment'] < section['capacity'])) {
+        key.full = false;
+      }
+    }
+  }
+}
+
+
+
+
+
 function updateSearch() {
-    var code = document.getElementById("course-code").value;
-    var title = document.getElementById("course-title").value;
-    var useTitleRegex = document.getElementById("title-regex").checked;
-    var useCodeRegex = document.getElementById("code-regex").checked;
+  globalTerm = $("#course-terms_btn").attr('realVal');
+  if (globalTerm == 'All') {
+    globalTerm = "";
+  }
+  var code = document.getElementById("course-code").value;
+  var title = document.getElementById("course-title").value;
+  var useTitleRegex = document.getElementById("title-regex").checked;
+  var useCodeRegex = document.getElementById("code-regex").checked;
+  var instructor = document.getElementById("instructor").value;
+  var useInstructorRegex = document.getElementById("prof-regex").checked;
+  var campus = $("#campus_btn").attr('realVal') || false;
+  var filled = document.getElementById("filled-regex").checked;
+  var department = $("#department_btn").attr('realVal') || false;
+  if (campus === "All") {
+    campus = false;
+  }
+  if (department === "All") {
+    department = false;
+  }
+
     
-    // Implement title regex
-    var titleRe;
-    if(!useTitleRegex) {
-        title = title.replace(/[\-\[\]\/\{\}\(\)\+\.\\\^\$\|]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".");
-        titleRe = RegExp(".*" + title + ".*", "i");
-    }
-    else {
-        titleRe = RegExp(title, "i");
-    }
-    
-    // Implement code regex
-    var codeRe;
-    if(!useCodeRegex) {
-        code = code.replace(/[\-\[\]\/\{\}\(\)\+\.\\\^\$\|]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".");
-        codeRe = RegExp(".*" + code + ".*", "i");
-    }
-    else {
-        codeRe = RegExp(code, "i");
-    }
+    // Implement title, code, and instructor regex
+    var titleRe = implementRegex(useTitleRegex, title);
+    var codeRe = implementRegex(useCodeRegex, code);
+    var instructorRe = implementRegex(useInstructorRegex, instructor);
+
     
     validCourses = getCoursesFromAttributeRegex(globalCourseData, "courseNumber", codeRe);
     validCourses = getCoursesFromAttributeRegex(validCourses, "courseTitle", titleRe);
+    validCourses = getInstructorRegex(validCourses, instructorRe);
+    if (campus != false) {
+      validCourses = getCoursesFromAttribute(validCourses, "campus", campus);
+    }
+    if (filled) {
+      validCourses = getCoursesFromAttribute(validCourses, "full", false);
+    }
+    if (department != false) {
+      validCourses = getCoursesFromDept(validCourses, department); 
+    }
+
     if(globalTerm != "") {    
         validCourses = filterCoursesByCalendar(validCourses, "designator", globalTerm); 
     }
     globalCourseSearch = validCourses;
     repopulateChart();
 }
+
+
+
+function implementRegex(useRegex, term) {
+    if(!useRegex) { //TODO: Why did we get rid of the excalmation point... used to be (!useRegex)
+        term = term.replace(/[\-\[\]\/\{\}\(\)\+\.\\\^\$\|]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".");
+        return RegExp(".*" + term + ".*", "i");
+    }
+    else {
+        return RegExp(term, "i");
+    }
+}
+
+
 
 // Run updateSearch a tenth of a second slower to avoid race conditions.
 function asyncButtonClick() {
@@ -864,16 +966,64 @@ function getCoursesFromAttribute(response, attribute, expected) {
 }
 
 function getCoursesFromAttributeRegex(response, attribute, expression) {
-    var possibleCourses = [];
-    for(key of response) {
-        if(key[attribute]) {
-            if(key[attribute].match(expression)) {
-                possibleCourses.push(key);
-            }
-        }
-    }
-    return possibleCourses;
+  var possibleCourses = [];
+  for(key of response) {
+      if(key[attribute]) {
+          if(key[attribute].match(expression)) {
+              possibleCourses.push(key);
+          }
+      }
+  }
+  return possibleCourses;
 }
+
+
+
+function getInstructorRegex(response, expression) {
+  var possibleCourses = [];
+  for(key of response) {
+    if (key['courseSections']) {
+      var allSections = key['courseSections'];
+      var addIt = false;
+      for (section of allSections) {
+        if (section['sectionInstructor']) {
+          var allProfs = section['sectionInstructor'];
+          for (prof of allProfs) {
+            var name = (prof['firstName'] || "") + " " + (prof['lastName'] || "");
+              if (name != " " && name.match(expression)) {
+                addIt = true;
+                break;
+              }
+            }
+          }
+        }
+        if (addIt) {
+          possibleCourses.push(key);
+        }
+      }
+    }
+  return possibleCourses;
+}
+
+
+
+function getCoursesFromDept(response, expression) {
+  var possibleCourses = [];
+  for(key of response) {
+    if (key['departments']) {
+      var allDepts = key['departments'];
+      for (dept of allDepts) {
+        if (dept['name'] && dept['name'] === expression) {
+            possibleCourses.push(key);
+            break;
+          }
+        }
+      }
+    }
+  return possibleCourses;
+}
+
+
 
 function attributeFilter(response, attribute, expected, mustBe) {
     var filtered = [];
@@ -897,31 +1047,49 @@ function attributeFilter(response, attribute, expected, mustBe) {
 
 
 (function getCourseTerms() {
-  //TODO: Call some function to get this data from portal.
+  //TODO: Call some function to have portal tell us which semesters are available
   //PLACEHOLDER:
-  createDropdownBlock("Course Term", "course-terms", "[Select]");
-  var terms = ["SP2017", "FA2016", "SP2016"];
+  createDropdownBlock("Course Term:", "course-terms", "[Select]");
+  var terms = ["All", "SP2017", "FA2016", "SP2016"];
   createDropdown("#course-terms", terms);
 }());
 
 
-
-// (function courseNumberStart() {
-//   //TODO: Call some function to get this data from portal.
-//   //PLACEHOLDER:
-//   var terms = ["2:00", "3:00"];
-//   createDropdownBlock("Course Number Start", "num-start", "All");
-//   createDropdown("#num-start", terms);
-// }());
+(function getCampuses() {
+  createDropdownBlock("Campus:", "campus", "[Select]");
+  var terms = ["All", "Claremont McKenna", "Harvey Mudd", "Pitzer", "Pomona", "Scripps"];
+  createDropdown("#campus", terms);
+}());
 
 
-// (function courseNumberEnd() {
-//   //TODO: Call some function to get this data from portal.
-//   //PLACEHOLDER:
-//   var terms = ["2:00", "3:00"];
-//   createDropdownBlock("Course Number End", "num-end", "All");
-//   createDropdown("#num-end", terms);
-// }());
+(function getDepartments() {
+  createDropdownBlock("Department:", "department", "[Select]");
+  // Ideally, we could generate these terms by looping through each object 
+  // and collecting every unique department name.
+  // Unfortunately, for whatever reason, when I call this function later
+  //  (i.e. call it from the getDepartments() function), everything appears
+  //  correctly on the page, but when you click on an item in the dropdown,
+  //  nothing happens.
+  var terms = ['All',
+               'American Studies',
+               'Astronomy',
+               'Biology',
+               'Chemistry',
+               'Computer Sci-Mathematics',
+               'Computer Science',
+               'Engineering',
+               'First Year Seminar',
+               'Government',
+               'Humanit/Soc Science/Arts',
+               'Integrative Experience',
+               'Interdepartmental Course',
+               'Mathematics',
+               'Music',
+               'Physical Education',
+               'Physics'];
+  createDropdown("#department", terms);
+}());
+
 
 
 // (function startTime() {
@@ -940,14 +1108,6 @@ function attributeFilter(response, attribute, expected, mustBe) {
 //   createDropdownBlock("Time End", "time-end", "All");
 //   createDropdown("#time-end", terms);
 // }());
-
-
-// (function campus() {
-//   var terms = ["Mudd", "Pomona"];
-//   createDropdownBlock("Campus", "campus", "All");
-//   createDropdown("#campus", terms);
-// }());
-
 
 // (function building() {
 //   //TODO: get actual building
@@ -975,7 +1135,7 @@ function attributeFilter(response, attribute, expected, mustBe) {
 
 function createDropdownBlock(label, id, defaultText) {
   var div = $("<div>", {class: "dropdown my-dropdown col-sm-6", text: label});
-  var button = $("<button>", {class: "btn btn-primary dropdown-toggle dropdown-button", text: defaultText, "data-toggle": "dropdown"}); 
+  var button = $("<button>", {class: "btn btn-primary dropdown-toggle dropdown-button", id: id + "_btn", text: defaultText, "data-toggle": "dropdown"}); 
   var caret = getCaret();
   button.append(caret);
   div.append(button);
@@ -997,12 +1157,10 @@ function createDropdown(elementID, namesList) {
 
 $(".dropdown-menu li a").click(function() {
   $(this).parents(".dropdown").find(".btn").html($(this).text() + getCaret());
+  $(this).parents(".dropdown").find(".btn").attr('realVal', $(this).text());
+  updateSearch();
 })
 
-$(".dropdown-menu li a").click(function() {
-    globalTerm = $(this).text();
-    updateSearch();
-});
 
 
 function getCaret() {
@@ -1173,16 +1331,12 @@ function addExpandedData(index) {
 
   var prof = "";
   if (this['sectionInstructor']) {
-    console.log("IN THE LOOP!!!");
     var instructordata = this['sectionInstructor'];
-    console.log(instructordata);
     jQuery.each(instructordata, function() {
-      console.log("Looping through profs");
       if(this['lastName']) {
         if(prof.length > 0) {
           prof += ', ';
         }
-        console.log('got one!');
         prof += this['lastName']
       } else if(this['firstName']) {
         if(prof.length > 0) {
