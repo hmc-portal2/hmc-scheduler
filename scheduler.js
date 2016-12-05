@@ -38,7 +38,7 @@ function getAllDepartments() {
 function addExtraAttributes() {
   for(key of globalCourseData) {
 
-    //Add the campuz the course is on to its attributes
+    //Add the campus the course is on to its attributes
     //Currently, courses which are jointly taught (JT) will not show up no matter which college you select.
     if (key['courseNumber']) {
       var courseCode = key['courseNumber'].slice(-2);
@@ -71,10 +71,17 @@ function addExtraAttributes() {
     // Currently, full is false if there is even 1 unfilled section
 
     // Default: starts out as true (and will remain that way if there is no data on fullness)
-    key.full = true;
+   
     for (section of key['courseSections']) {
-      if (section['capacity'] && section['currentEnrollment'] && (section['currentEnrollment'] < section['capacity'])) {
-        key.full = false;
+      for (session of section['calendarSessions']) {
+        var term = session['designator'];
+        var full = true;
+        if (section['capacity'] && section['currentEnrollment'] && (section['currentEnrollment'] < section['capacity'])) {
+          full = false;
+        } else {
+          console.log("it's full");
+        }
+        session.full = full;
       }
     }
   }
@@ -86,6 +93,9 @@ function addExtraAttributes() {
 
 function updateSearch() {
   globalTerm = $("#course-terms_btn").attr('realVal');
+  if (!globalTerm) {
+    return;
+  }
   if (globalTerm == 'All') {
     globalTerm = "";
   }
@@ -119,7 +129,7 @@ function updateSearch() {
       validCourses = getCoursesFromAttribute(validCourses, "campus", campus);
     }
     if (filled) {
-      validCourses = getCoursesFromAttribute(validCourses, "full", false);
+      validCourses = getCoursesFilled(validCourses);
     }
     if (department != false) {
       validCourses = getCoursesFromDept(validCourses, department); 
@@ -1007,6 +1017,36 @@ function getInstructorRegex(response, expression) {
 
 
 
+function getCoursesFilled(validCourses) {
+  var possibleCourses = [];
+  for(course of validCourses) {
+    for (section of key['courseSections']) {
+      for (session of section['calendarSessions']) {
+        console.log("Session: " + session['externalId']);
+        if (session['designator'] === globalTerm) {
+          console.log("Filled: " + session['full']);
+          if (session['full'] === false) {
+            possibleCourses.push(course);
+          }
+        }
+      }
+    }
+  }
+  console.log("SIZE");
+  console.log(possibleCourses.length);
+  return possibleCourses;
+}
+
+
+
+ 
+
+
+
+
+
+
+
 function getCoursesFromDept(response, expression) {
   var possibleCourses = [];
   for(key of response) {
@@ -1172,7 +1212,20 @@ function getCaret() {
 
 function showResult(courseIndex) {
   //Create a row to hold the results
+      //TODO: take out
   var courseObj = globalCourseSearch[courseIndex];
+    if (courseObj) {
+      if (courseObj['courseTitle'] === 'Algorithms') {
+        console.log(courseObj);
+      } else {
+        //console.log(courseObj['courseTitle']);
+      }
+  } else {
+
+  }
+
+
+  
   var row = $("<tr>", {courseIndex: courseIndex});
   row.append($("<td>", {text: courseObj['courseNumber'] || 'NO SECTION'}));
   row.append($("<td>", {text: courseObj['courseTitle'] || 'No title'}));
@@ -1290,10 +1343,9 @@ var sections = [];
 
 function addExpandedData(index) {
   var courseObj = globalCourseSearch[index];
-  
   var title = "";
   if (courseObj['courseTitle']) {
-    title = courseObj['courseTitle']
+    title = courseObj['courseTitle'];
   }   
   
   var code = "";
