@@ -1089,21 +1089,21 @@ function attributeFilter(response, attribute, expected, mustBe) {
 (function getCourseTerms() {
   //TODO: Call some function to have portal tell us which semesters are available
   //PLACEHOLDER:
-  createDropdownBlock("Course Term:", "course-terms", "[Select]");
+  createDropdownBlock("Course Term:", "course-terms", "SP2017");
   var terms = ["All", "SP2017", "FA2016", "SP2016"];
   createDropdown("#course-terms", terms);
 }());
 
 
 (function getCampuses() {
-  createDropdownBlock("Campus:", "campus", "[Select]");
+  createDropdownBlock("Campus:", "campus", "All");
   var terms = ["All", "Claremont McKenna", "Harvey Mudd", "Pitzer", "Pomona", "Scripps"];
   createDropdown("#campus", terms);
 }());
 
 
 (function getDepartments() {
-  createDropdownBlock("Department:", "department", "[Select]");
+  createDropdownBlock("Department:", "department", "All");
   // Ideally, we could generate these terms by looping through each object 
   // and collecting every unique department name.
   // Unfortunately, for whatever reason, when I call this function later
@@ -1175,7 +1175,7 @@ function attributeFilter(response, attribute, expected, mustBe) {
 
 function createDropdownBlock(label, id, defaultText) {
   var div = $("<div>", {class: "dropdown my-dropdown col-sm-6", text: label});
-  var button = $("<button>", {class: "btn btn-primary dropdown-toggle dropdown-button", id: id + "_btn", text: defaultText, "data-toggle": "dropdown"}); 
+  var button = $("<button>", {class: "btn btn-primary dropdown-toggle dropdown-button", id: id + "_btn", text: defaultText, "data-toggle": "dropdown", realVal: defaultText});
   var caret = getCaret();
   button.append(caret);
   div.append(button);
