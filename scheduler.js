@@ -20,8 +20,8 @@ function getAllDepartments() {
     var dept = "";
     if (key['departments']) {
       jQuery.each(key['departments'], function() {
-        if (this['name']) {
-          dept += this['name'] + ' ';
+        if (this['Name']) {
+          dept += this['Name'] + ' ';
         }
       })
       if (!(dept in depts)) {
@@ -63,6 +63,7 @@ function addExtraAttributes() {
           college = "Pitzer";
           break;
         default:
+          college = "Other";
           break;
       }
       key.campus = college;
@@ -1060,7 +1061,7 @@ function getCoursesFromDept(response, expression) {
     if (key['departments']) {
       var allDepts = key['departments'];
       for (dept of allDepts) {
-        if (dept['name'] && dept['name'] === expression) {
+        if (dept['Name'] && dept['Name'] === expression) {
           possibleCourses.push(key);
           break;
         }
@@ -1103,7 +1104,7 @@ function attributeFilter(response, attribute, expected, mustBe) {
 
 (function getCampuses() {
   createDropdownBlock("Campus:", "campus", "All");
-  var terms = ["All", "Claremont McKenna", "Harvey Mudd", "Pitzer", "Pomona", "Scripps"];
+  var terms = ["All", "Claremont McKenna", "Harvey Mudd", "Pitzer", "Pomona", "Scripps", "Other"];
   createDropdown("#campus", terms);
 }());
 
@@ -1401,6 +1402,7 @@ function addExpandedData(index) {
 
   var nameLine = "<h4>" + title + " (" + code + ")</h4>";
   var deptLine = "<h5>Dept: " + dept + "</h5>";
+  var descLine = "<p>" + courseObj['description'] + "</p>"
   var newRow = $(".expanded")[0];
   var subTable = $("<table>", {
     class: "table table-bordered"
@@ -1409,6 +1411,7 @@ function addExpandedData(index) {
   $(header).appendTo(subTable)
   $(nameLine).appendTo(newRow);
   $(deptLine).appendTo(newRow);
+  $(descLine).appendTo(newRow);
   $(subTable).appendTo(newRow);
 
 
