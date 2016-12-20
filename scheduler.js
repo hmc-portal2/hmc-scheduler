@@ -207,13 +207,13 @@ function toCourseObject(courseJson) {
         timeslot += ', ';
         isFirstTime = true;
       }
-      timeslot += schedule['classMeetingDays'].replace(/-/g, '');
+      timeslot += schedule['ClassMeetingDays'].replace(/-/g, '');
       timeslot += ' ';
-      timeslot += toAmPmTime(schedule['classBeginningTime']);
+      timeslot += toAmPmTime(schedule['ClassBeginningTime']);
       timeslot += '-';
-      timeslot += toAmPmTime(schedule['classEndingTime']);
+      timeslot += toAmPmTime(schedule['ClassEndingTime']);
       timeslot += '; ';
-      timeslot += schedule['instructionSiteName'];
+      timeslot += schedule['InstructionSiteName'];
     }
     timeslots += timeslot;
     isfirsttimeslot = false;
@@ -1254,11 +1254,11 @@ function showResult(courseIndex) {
         timeslot += ', ';
         isFirstTime = true;
       }
-      timeslot += schedule['classMeetingDays'].replace(/-/g, '');
+      timeslot += schedule['ClassMeetingDays'].replace(/-/g, '');
       timeslot += '\u00a0';
-      timeslot += toAmPmTime(schedule['classBeginningTime']);
+      timeslot += toAmPmTime(schedule['ClassBeginningTime']);
       timeslot += '-';
-      timeslot += toAmPmTime(schedule['classEndingTime']);
+      timeslot += toAmPmTime(schedule['ClassEndingTime']);
     }
     timeslots += timeslot;
     isfirsttimeslot = false;
@@ -1419,18 +1419,15 @@ function addExpandedData(index) {
   var times = ""
   if (this['courseSectionSchedule']) {
     jQuery.each(this['courseSectionSchedule'], function() {
-      if(this['classMeetingDays']) {
-        times += this['classMeetingDays'].replace(/-/g, '');
-      if (this['classBeginningTime']) {
-        times += ': ' + toAmPmTime(this['classBeginningTime']);
+      if(this['ClassMeetingDays']) {
+        times += this['ClassMeetingDays'].replace(/-/g, '');
+        if (this['ClassBeginningTime']) {
+          times += ': ' + toAmPmTime(this['ClassBeginningTime']);
+        }
+        if (this['ClassEndingTime']) {
+          times += '-' + toAmPmTime(this['ClassEndingTime']);
+        }
       }
-      if (this['classEndingTime']) {
-        times += '-' + toAmPmTime(this['classEndingTime']);
-      }
-    }
-
-
-
     });
   }
 
