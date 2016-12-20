@@ -1392,8 +1392,8 @@ function addExpandedData(index) {
   var dept = "";
   if (courseObj['departments']) {
     jQuery.each(courseObj['departments'], function() {
-      if (this['name']) {
-        dept += this['name'] + ' ';
+      if (this['Name']) {
+        dept += this['Name'] + ' ';
       }
     })
     courseTitle = courseObj['courseTitle']
