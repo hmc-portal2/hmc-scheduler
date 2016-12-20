@@ -1402,7 +1402,7 @@ function addExpandedData(index) {
 
   var nameLine = "<h4>" + title + " (" + code + ")</h4>";
   var deptLine = "<h5>Dept: " + dept + "</h5>";
-  var descLine = "<p>" + courseObj['description'] + "</p>"
+  var descLine = "<p style=\"text-align: left;\">" + courseObj['description'] + "</p>"
   var newRow = $(".expanded")[0];
   var subTable = $("<table>", {
     class: "table table-bordered"
