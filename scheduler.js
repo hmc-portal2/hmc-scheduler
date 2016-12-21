@@ -18,13 +18,13 @@ function lingkCallback(json) {
 
 function getAllDepartments() {
   var depts = {};
-  for(key of globalCourseData) {
-  //TODO: Get rid of this later
+  for (key of globalCourseData) {
+    //TODO: Get rid of this later
     var dept = "";
     if (key['departments']) {
       jQuery.each(key['departments'], function() {
-        if (this['name']) {
-          dept += this['name'] + ' ';
+        if (this['Name']) {
+          dept += this['Name'] + ' ';
         }
       })
       if (!(dept in depts)) {
@@ -39,7 +39,7 @@ function getAllDepartments() {
 
 
 function addExtraAttributes() {
-  for(key of globalCourseData) {
+  for (key of globalCourseData) {
 
     //Add the campus the course is on to its attributes
     //Currently, courses which are jointly taught (JT) will not show up no matter which college you select.
@@ -47,25 +47,26 @@ function addExtraAttributes() {
       var courseCode = key['courseNumber'].slice(-2);
       var college = "";
       switch (courseCode) {
-        case 'HM': 
+        case 'HM':
           college = "Harvey Mudd";
           break;
-        case 'CG': 
+        case 'CG':
           college = "Claremont Graduate University";
           break;
-        case 'CM': 
+        case 'CM':
           college = "Claremont McKenna";
           break;
-        case 'SC': 
+        case 'SC':
           college = "Scripps";
           break;
-        case 'PO': 
+        case 'PO':
           college = "Pomona";
           break;
-        case 'PZ': 
+        case 'PZ':
           college = "Pitzer";
           break;
-        default: 
+        default:
+          college = "Other";
           break;
       }
       key.campus = college;
@@ -74,7 +75,7 @@ function addExtraAttributes() {
     // Currently, full is false if there is even 1 unfilled section
 
     // Default: starts out as true (and will remain that way if there is no data on fullness)
-   
+
     for (section of key['courseSections']) {
       for (session of section['calendarSessions']) {
         var term = session['designator'];
@@ -89,7 +90,6 @@ function addExtraAttributes() {
     }
   }
 }
-
 
 
 
@@ -118,80 +118,79 @@ function updateSearch() {
     department = false;
   }
 
-    
-    // Implement title, code, and instructor regex
-    var titleRe = implementRegex(useTitleRegex, title);
-    var codeRe = implementRegex(useCodeRegex, code);
-    var instructorRe = implementRegex(useInstructorRegex, instructor);
 
-    
-    validCourses = getCoursesFromAttributeRegex(globalCourseData, "courseNumber", codeRe);
-    validCourses = getCoursesFromAttributeRegex(validCourses, "courseTitle", titleRe);
-    validCourses = getInstructorRegex(validCourses, instructorRe);
-    if (campus != false) {
-      validCourses = getCoursesFromAttribute(validCourses, "campus", campus);
-    }
-    if (filled) {
-      validCourses = getCoursesFilled(validCourses);
-    }
-    if (department != false) {
-      validCourses = getCoursesFromDept(validCourses, department); 
-    }
+  // Implement title, code, and instructor regex
+  var titleRe = implementRegex(useTitleRegex, title);
+  var codeRe = implementRegex(useCodeRegex, code);
+  var instructorRe = implementRegex(useInstructorRegex, instructor);
 
-    if(globalTerm != "") {    
-        validCourses = filterCoursesByCalendar(validCourses, "designator", globalTerm); 
-    }
-    globalCourseSearch = validCourses;
-    repopulateChart();
+
+  validCourses = getCoursesFromAttributeRegex(globalCourseData, "courseNumber", codeRe);
+  validCourses = getCoursesFromAttributeRegex(validCourses, "courseTitle", titleRe);
+  validCourses = getInstructorRegex(validCourses, instructorRe);
+  if (campus != false) {
+    validCourses = getCoursesFromAttribute(validCourses, "campus", campus);
+  }
+  if (filled) {
+    validCourses = getCoursesFilled(validCourses);
+  }
+  if (department != false) {
+    validCourses = getCoursesFromDept(validCourses, department);
+  }
+
+  if (globalTerm != "") {
+    validCourses = filterCoursesByCalendar(validCourses, "designator", globalTerm);
+  }
+  globalCourseSearch = validCourses;
+  repopulateChart();
 }
 
 
 
 function implementRegex(useRegex, term) {
-    if(!useRegex) { //TODO: Why did we get rid of the excalmation point... used to be (!useRegex)
-        term = term.replace(/[\-\[\]\/\{\}\(\)\+\.\\\^\$\|]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".");
-        return RegExp(".*" + term + ".*", "i");
-    }
-    else {
-        return RegExp(term, "i");
-    }
+  if (!useRegex) { //TODO: Why did we get rid of the excalmation point... used to be (!useRegex)
+    term = term.replace(/[\-\[\]\/\{\}\(\)\+\.\\\^\$\|]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".");
+    return RegExp(".*" + term + ".*", "i");
+  } else {
+    return RegExp(term, "i");
+  }
 }
 
 
 
 // Run updateSearch a tenth of a second slower to avoid race conditions.
 function asyncButtonClick() {
-    window.setTimeout(updateSearch,100);
+  window.setTimeout(updateSearch, 100);
 }
 
 function toAmPmTime(timestring) {
-  if(timestring.length === 3) {
+  if (timestring.length === 3) {
     timestring = '0' + timestring;
   }
-  hours = timestring.substring(0,2);
+  hours = timestring.substring(0, 2);
   ispm = hours > 12;
-  if(ispm) hours = '' + (hours - 12);
-  if(hours.length === 1) {
+  if (ispm) hours = '' + (hours - 12);
+  if (hours.length === 1) {
     hours = '0' + hours;
   }
-  minutes = timestring.substring(2,4);
-  return hours + ':' + minutes + (ispm? 'PM': 'AM');
+  minutes = timestring.substring(2, 4);
+  return hours + ':' + minutes + (ispm ? 'PM' : 'AM');
 }
 
 function toCourseObject(courseJson) {
   var courseName = courseJson['courseTitle'];
   var timeslots = '';
   var isfirsttimeslot = true;
-  for(var section of courseJson['courseSections']) {
-    if(!isfirsttimeslot) {
+  for (var section of courseJson['courseSections']) {
+    if (!isfirsttimeslot) {
       timeslots += '\n';
     }
     var instructorName = '';
-    if(section['sectionInstructor'] && section['sectionInstructor'].length > 0) {
+    if (section['sectionInstructor'] && section['sectionInstructor'].length > 0) {
       var instructor = section['sectionInstructor'][0];
-      if(instructor['lastName']) {
+      if (instructor['lastName']) {
         instructorName = instructor['lastName'];
-      } else if(instructor['firstName']) {
+      } else if (instructor['firstName']) {
         instructorName = instructor['firstName'];
       } else {
         instructorName = 'Unknown';
@@ -205,18 +204,18 @@ function toCourseObject(courseJson) {
     timeslot += instructorName;
     timeslot += '): ';
     var isFirstTime = true;
-    for(var schedule of section['courseSectionSchedule']) {
-      if(!isFirstTime) {
+    for (var schedule of section['courseSectionSchedule']) {
+      if (!isFirstTime) {
         timeslot += ', ';
         isFirstTime = true;
       }
-      timeslot += schedule['classMeetingDays'].replace(/-/g, '');
+      timeslot += schedule['ClassMeetingDays'].replace(/-/g, '');
       timeslot += ' ';
-      timeslot += toAmPmTime(schedule['classBeginningTime']);
+      timeslot += toAmPmTime(schedule['ClassBeginningTime']);
       timeslot += '-';
-      timeslot += toAmPmTime(schedule['classEndingTime']);
+      timeslot += toAmPmTime(schedule['ClassEndingTime']);
       timeslot += '; ';
-      timeslot += schedule['instructionSiteName'];
+      timeslot += schedule['InstructionSiteName'];
     }
     timeslots += timeslot;
     isfirsttimeslot = false;
@@ -244,18 +243,21 @@ function randomColor(seed) {
     hash = (((hash << 5) + hash) + seed.charCodeAt(i)) % 359;
 
   return 'hsl(' + hash + ', 73%, 90%)'
-  // Even though we should use "% 360" for all possible values, using 359 makes for fewer hash collisions.
+    // Even though we should use "% 360" for all possible values, using 359 makes for fewer hash collisions.
 }
 
 var openNode = false;
 var tabIndex = 0;
+
 function addCourse(course, courses, favoriteCourses, fc) {
 
   // Make a new course node
   var courseNode = document.getElementById('course-template').cloneNode(true);
   courseNode.classList.remove('template');
   course._node = courseNode;
-  course._node.toJSON = function () { return undefined; };
+  course._node.toJSON = function() {
+    return undefined;
+  };
 
   // Fill in the values
   if (course.name) courseNode.querySelector('input[type="text"]').value = course.name;
@@ -264,7 +266,7 @@ function addCourse(course, courses, favoriteCourses, fc) {
   courseNode.querySelector('input[type="text"]').style.backgroundColor = course.color || randomColor(course.name);
 
   // Collapsing and expanding
-  courseNode.querySelector('input[type="text"]').onfocus = function () {
+  courseNode.querySelector('input[type="text"]').onfocus = function() {
     if (openNode && openNode != courseNode)
       openNode.classList.add('collapsed');
     openNode = courseNode;
@@ -276,13 +278,13 @@ function addCourse(course, courses, favoriteCourses, fc) {
   };*/
 
   // Data updating
-  courseNode.querySelector('input[type="text"]').onchange = function () {
+  courseNode.querySelector('input[type="text"]').onchange = function() {
     course.name = this.value;
 
     save('courses', courses);
     document.getElementById('button-generate').disabled = false;
   };
-  courseNode.querySelector('textarea').onchange = function () {
+  courseNode.querySelector('textarea').onchange = function() {
     course.times = this.value.trim();
 
     // Add a trailing line break to facilitate copy/paste
@@ -292,7 +294,7 @@ function addCourse(course, courses, favoriteCourses, fc) {
     save('courses', courses);
     document.getElementById('button-generate').disabled = false;
   };
-  courseNode.querySelector('input[type="checkbox"]').onchange = function () {
+  courseNode.querySelector('input[type="checkbox"]').onchange = function() {
     course.selected = !!this.checked;
     save('courses', courses);
     document.getElementById('button-generate').disabled = false;
@@ -303,9 +305,9 @@ function addCourse(course, courses, favoriteCourses, fc) {
   courseNode.querySelector('textarea').setAttribute('tabindex', ++tabIndex);
 
   // Deleting
-  courseNode.querySelector('.x').onclick = function () {
+  courseNode.querySelector('.x').onclick = function() {
     if (confirm('Are you sure you want to delete ' + (course.name || 'this class') + '?')) {
-      if(courseNode.querySelector('.atf').style.display == 'none') {
+      if (courseNode.querySelector('.atf').style.display == 'none') {
         favoriteCourses.splice(favoriteCourses.indexOf(course), 1);
         courseNode.parentNode.removeChild(courseNode);
         save('favoriteCourses', favoriteCourses);
@@ -315,7 +317,7 @@ function addCourse(course, courses, favoriteCourses, fc) {
           document.getElementById('favorite-courses-container').classList.add('empty');
           document.getElementById('favorite-courses-container').classList.remove('not-empty');
         }
-      } else if(courseNode.querySelector('.fta').style.display == 'none') {
+      } else if (courseNode.querySelector('.fta').style.display == 'none') {
         courses.splice(courses.indexOf(course), 1);
         courseNode.parentNode.removeChild(courseNode);
         save('courses', courses);
@@ -333,24 +335,26 @@ function addCourse(course, courses, favoriteCourses, fc) {
   };
 
   // Change colors
-  courseNode.querySelector('.c').onclick = function () {
+  courseNode.querySelector('.c').onclick = function() {
     var color = course.color || randomColor(course.name);
-    courseNode.querySelector('input[type="text"]').style.backgroundColor = course.color = color.replace(/\d+/, function (hue) { return (+hue + 24) % 360; });
+    courseNode.querySelector('input[type="text"]').style.backgroundColor = course.color = color.replace(/\d+/, function(hue) {
+      return (+hue + 24) % 360;
+    });
     save('courses', courses);
     document.getElementById('button-generate').disabled = false;
     return false;
   };
 
   // Active to favorites
-  courseNode.querySelector('.atf').onclick = function () {
+  courseNode.querySelector('.atf').onclick = function() {
     document.getElementById('favorite-courses').appendChild(courseNode);
     favoriteCourses.push(courses.splice(courses.indexOf(course), 1)[0]);
     save('courses', courses);
     save('favoriteCourses', favoriteCourses);
     document.getElementById('button-generate').disabled = false;
 
-    courseNode.getElementsByClassName('atf')[0].style='display: none;';
-    courseNode.getElementsByClassName('fta')[0].style='';
+    courseNode.getElementsByClassName('atf')[0].style = 'display: none;';
+    courseNode.getElementsByClassName('fta')[0].style = '';
 
     if (courses.length == 0) {
       document.getElementById('courses-container').classList.add('empty');
@@ -362,15 +366,15 @@ function addCourse(course, courses, favoriteCourses, fc) {
   };
 
   // Favorite to active
-  courseNode.querySelector('.fta').onclick = function () {
+  courseNode.querySelector('.fta').onclick = function() {
     document.getElementById('courses').appendChild(courseNode);
     courses.push(favoriteCourses.splice(favoriteCourses.indexOf(course), 1)[0]);
     save('courses', courses);
     save('favoriteCourses', favoriteCourses);
     document.getElementById('button-generate').disabled = false;
 
-    courseNode.getElementsByClassName('atf')[0].style='';
-    courseNode.getElementsByClassName('fta')[0].style='display: none;';
+    courseNode.getElementsByClassName('atf')[0].style = '';
+    courseNode.getElementsByClassName('fta')[0].style = 'display: none;';
 
     if (favoriteCourses.length == 0) {
       document.getElementById('favorite-courses-container').classList.add('empty');
@@ -381,10 +385,10 @@ function addCourse(course, courses, favoriteCourses, fc) {
     return false;
   };
 
-  if(fc) {
-    courseNode.getElementsByClassName('atf')[0].style='display: none;';
-    courseNode.getElementsByClassName('fta')[0].style='';
-    
+  if (fc) {
+    courseNode.getElementsByClassName('atf')[0].style = 'display: none;';
+    courseNode.getElementsByClassName('fta')[0].style = '';
+
     document.getElementById('favorite-courses').appendChild(courseNode);
     document.getElementById('favorite-courses-container').classList.remove('empty');
     document.getElementById('favorite-courses-container').classList.add('not-empty');
@@ -400,6 +404,7 @@ function addCourse(course, courses, favoriteCourses, fc) {
 function timeToHours(h, m, pm) {
   return h + m / 60 + (pm && h != 12 ? 12 : 0);
 }
+
 function formatHours(hours) {
   var h = Math.floor(hours) % 12 || 12;
   var m = Math.round((hours % 1) * 60);
@@ -432,21 +437,21 @@ function drawSchedule(schedule) {
   var hourHeight = document.querySelector('#schedule li').offsetHeight;
 
   // Clear the schedule
-  days.forEach(function (day) {
+  days.forEach(function(day) {
     while (day.firstChild)
       day.removeChild(day.firstChild);
   });
 
   // Add each time slot
-  schedule.forEach(function (timeSlot) {
+  schedule.forEach(function(timeSlot) {
     var div = document.createElement('div');
     div.style.top = hourHeight * (timeSlot.from - beginHour) + 'px';
     div.style.backgroundColor = timeSlot.course.color || randomColor(timeSlot.course.name);
     div.innerHTML = (options.showSections && timeSlot.section ?
-        timeSlot.section.replace(/^([^(]+)\((.*)\)/, function (_, code, profs) {
+        timeSlot.section.replace(/^([^(]+)\((.*)\)/, function(_, code, profs) {
           return '<b>' + code + '</b><br />' + profs;
-        })
-        : '<b>' + timeSlot.course.name + '</b>') +
+        }) :
+        '<b>' + timeSlot.course.name + '</b>') +
       '<br />' + formatHours(timeSlot.from) + ' - ' + formatHours(timeSlot.to);
 
     days[timeSlot.weekday].appendChild(div);
@@ -455,7 +460,7 @@ function drawSchedule(schedule) {
     var supposedHeight = (timeSlot.to - timeSlot.from) * hourHeight;
     var paddingHeight = (supposedHeight - div.offsetHeight) / 2;
     div.style.padding = paddingHeight + 'px 0';
-    div.style.height = (supposedHeight /*- paddingHeight * 2*/) + 'px';
+    div.style.height = (supposedHeight /*- paddingHeight * 2*/ ) + 'px';
   });
 }
 
@@ -464,7 +469,7 @@ function addSavedSchedule(name, schedule, savedSchedules) {
 
   var scheduleLink = document.createElement('a');
   scheduleLink.href = '#';
-  scheduleLink.onclick = function () {
+  scheduleLink.onclick = function() {
     drawSchedule(schedule);
     document.getElementById('button-generate').disabled = false;
     return false;
@@ -474,7 +479,7 @@ function addSavedSchedule(name, schedule, savedSchedules) {
   var removeLink = document.createElement('a');
   removeLink.href = '#';
   removeLink.className = 'x';
-  removeLink.onclick = function () {
+  removeLink.onclick = function() {
     if (confirm('Are you sure you want to delete this saved schedule?')) {
       div.parentNode.removeChild(div);
       delete savedSchedules[name];
@@ -515,7 +520,7 @@ function exportSchedule(mapOfCourses) {
   var footer = 'END:VCALENDAR\n';
   var result = '';
   result += header;
-  for (i in mapOfCourses)  {
+  for (i in mapOfCourses) {
     var vevent = new VEventObject(mapOfCourses[i]);
     result += vevent.toString();
   }
@@ -553,7 +558,7 @@ function VEventObject(timeBlocks) {
   // Update the start date of the class to the first day where there is
   // actually a class (according to the MTWRF flags)
   var startDay = this.startDate.getDay();
-  var daysTillClasses = this.weekdays.map(function (weekday) {
+  var daysTillClasses = this.weekdays.map(function(weekday) {
     var day = weekday + 1;
     return (7 + day - startDay) % 7;
   });
@@ -563,7 +568,7 @@ function VEventObject(timeBlocks) {
   this.endDate = new Date(Date.parse(timeBlocks[0].course.data.endDate));
   this.name = timeBlocks[0].course.name;
   this.loc = timeBlocks[0].loc;
-  this.toString = function () {
+  this.toString = function() {
     var days = ['MO', 'TU', 'WE', 'TH', 'FR'];
     var startDateFull = dateAddHoursAndMinutes(this.startDate, this.startTime);
     var endDateFull = dateAddHoursAndMinutes(this.startDate, this.endTime); //no "overnight" classes
@@ -574,7 +579,9 @@ function VEventObject(timeBlocks) {
     var dtend = 'DTEND:' + formatDate(endDateFull) + '\n';
     var dtstamp = 'DTSTAMP:' + formatDate(new Date()) + '\n';
     var place = 'LOCATION:' + this.loc.replace(/,/g, '\\,').replace(/\n/g, '') + '\n';
-    var rrule = 'RRULE:FREQ=WEEKLY;BYDAY=' + this.weekdays.map(function(day) { return days[day]; }).join(',') + ';UNTIL=' + formatDate(this.endDate) + '\n';
+    var rrule = 'RRULE:FREQ=WEEKLY;BYDAY=' + this.weekdays.map(function(day) {
+      return days[day];
+    }).join(',') + ';UNTIL=' + formatDate(this.endDate) + '\n';
     var title = 'SUMMARY:' + this.name.replace(/,/g, '\\,') + '\n';
     return header + uid + dtstart + dtend + dtstamp + place + rrule + title + footer;
   };
@@ -603,9 +610,11 @@ function mapCourses(schedules) {
 
 function generateSchedules(courses) {
   // Parse all the courses from text form into a list of courses, each a list of time slots
-  var classes = courses.filter(function (course) { return course.selected && course.times; }).map(function (course) {
+  var classes = courses.filter(function(course) {
+    return course.selected && course.times;
+  }).map(function(course) {
     // Parse every line separately
-    return course.times.split('\n').map(function (timeSlot) {
+    return course.times.split('\n').map(function(timeSlot) {
 
       // Extract the section info from the string, if it's there.
       var section = timeSlot.indexOf(': ') > -1 ? timeSlot.split(': ')[0] : '';
@@ -613,8 +622,8 @@ function generateSchedules(courses) {
       // Split it into a list of each day's time slot
       var args = [];
       // The lookahead at the end is because meeting times are delimited by commas (oops), but the location may contain commas.
-      timeSlot.replace(/([MTWRF]+) (\d?\d):(\d\d)\s*(AM|PM)?\s*\-\s?(\d?\d):(\d\d)\s*(AM|PM)?;([^;]*?)(?=$|, \w+ \d?\d:\d{2})/gi, function (_, daylist, h1, m1, pm1, h2, m2, pm2, loc) {
-        daylist.split('').forEach(function (day) {
+      timeSlot.replace(/([MTWRF]+) (\d?\d):(\d\d)\s*(AM|PM)?\s*\-\s?(\d?\d):(\d\d)\s*(AM|PM)?;([^;]*?)(?=$|, \w+ \d?\d:\d{2})/gi, function(_, daylist, h1, m1, pm1, h2, m2, pm2, loc) {
+        daylist.split('').forEach(function(day) {
           args.push({
             'course': course,
             'section': section,
@@ -632,11 +641,13 @@ function generateSchedules(courses) {
 
   // Generate all possible combinations
   var combos = [];
-  var state = classes.map(function () { return 0; }); // Array of the same length
+  var state = classes.map(function() {
+    return 0;
+  }); // Array of the same length
   while (true) {
 
     // Add this possibility
-    combos.push(classes.map(function (course, i) {
+    combos.push(classes.map(function(course, i) {
       return course[state[i]];
     }));
 
@@ -656,19 +667,21 @@ function generateSchedules(courses) {
       break;
   }
   // Concatenate all the timeslots
-  var concatted = combos.map(function (combo) {
+  var concatted = combos.map(function(combo) {
     return Array.prototype.concat.apply([], combo);
   });
 
 
   // And remove conflicting schedules
-  return options.allowConflicts ? concatted : concatted.filter(function (timeSlots) {
+  return options.allowConflicts ? concatted : concatted.filter(function(timeSlots) {
     // Loop over every six minute interval and make sure no two classes occupy it
     for (var day = 0; day < 5; day++) {
 
-      var todaySlots = timeSlots.filter(function (timeSlot) { return timeSlot.weekday == day; });
+      var todaySlots = timeSlots.filter(function(timeSlot) {
+        return timeSlot.weekday == day;
+      });
       for (var t = 0; t < 24; t += 0.1) {
-        var classesThen = todaySlots.filter(function (timeSlot) {
+        var classesThen = todaySlots.filter(function(timeSlot) {
           return timeSlot.from < t && t < timeSlot.to;
         });
         var uniqueClassesThen = unique_classes(classesThen);
@@ -684,7 +697,7 @@ function generateSchedules(courses) {
 
 // This function takes a list of courses and reduces it - removing any
 // two timeSlots that have the same course name
-function unique_classes (timeSlots) {
+function unique_classes(timeSlots) {
   slots = []
   alreadyAdded = {}
   for (slotIdx in timeSlots) {
@@ -699,6 +712,7 @@ function unique_classes (timeSlots) {
 
 // Store stuff
 var lastModified = localStorage.lastModified;
+
 function save(type, arr) {
 
   if (localStorage.lastModified != lastModified)
@@ -713,7 +727,6 @@ function save(type, arr) {
 
 
 
-
 function messageOnce(str) {
   if (localStorage['message_' + str])
     return false;
@@ -722,7 +735,7 @@ function messageOnce(str) {
   return true;
 }
 
-(function () {
+(function() {
   // Load data
   var courses = localStorage.courses ? JSON.parse(localStorage.courses) : [];
   var favoriteCourses = localStorage.favoriteCourses ? JSON.parse(localStorage.favoriteCourses) : [];
@@ -744,7 +757,7 @@ function messageOnce(str) {
     save('courses', courses);
   };*/
 
-  document.getElementById('button-save').onclick = function () {
+  document.getElementById('button-save').onclick = function() {
     var name = prompt('What would you like to call this schedule?', '');
     if (name) {
       savedSchedules[name] = JSON.parse(JSON.stringify(schedules[schedulePosition]));
@@ -753,16 +766,16 @@ function messageOnce(str) {
     }
   };
 
-  document.getElementById('button-generate').onclick = function () {
+  document.getElementById('button-generate').onclick = function() {
     schedules = generateSchedules(courses);
 
     // Display them all
     schedulePosition = loadSchedule(schedules, 0);
 
     // The credit count
-    var count = courses.filter(function (course) {
+    var count = courses.filter(function(course) {
       return course.selected;
-    }).map(function (course) {
+    }).map(function(course) {
       if (!course.data || !course.data['creditValue'])
         return NaN;
 
@@ -772,7 +785,7 @@ function messageOnce(str) {
 
       // Other colleges' courses need to be multiplied by three.
       return course.data['creditValue'] * 3;
-    }).reduce(function (a, b) {
+    }).reduce(function(a, b) {
       return a + b;
     }, 0);
     document.getElementById('credit-counter').innerHTML = isNaN(count) ? '' : '(' + count.toFixed(1) + ' credits)';
@@ -781,24 +794,26 @@ function messageOnce(str) {
   };
 
   document.getElementById('button-sections').checked = options.showSections = localStorage.showSections;
-  document.getElementById('button-sections').onclick = function () {
+  document.getElementById('button-sections').onclick = function() {
     localStorage.showSections = options.showSections = this.checked;
     document.getElementById('button-generate').onclick();
   };
 
   document.getElementById('button-conflicts').checked = options.allowConflicts = localStorage.allowConflicts;
-  document.getElementById('button-conflicts').onclick = function () {
+  document.getElementById('button-conflicts').onclick = function() {
     localStorage.allowConflicts = options.allowConflicts = this.checked;
     document.getElementById('button-generate').onclick();
   };
 
   // Navigating schedules
-  document.getElementById('button-left').onclick = function () { schedulePosition = loadSchedule(schedules, schedulePosition - 1); };
-  document.getElementById('button-right').onclick = function () {
+  document.getElementById('button-left').onclick = function() {
+    schedulePosition = loadSchedule(schedules, schedulePosition - 1);
+  };
+  document.getElementById('button-right').onclick = function() {
     schedulePosition = loadSchedule(schedules, schedulePosition + 1);
     this.classList.add('clicked');
   };
-  document.onkeydown = function (e) {
+  document.onkeydown = function(e) {
     if (e.keyCode == 39)
       document.getElementById('button-right').onclick();
     else if (e.keyCode == 37)
@@ -870,7 +885,7 @@ function messageOnce(str) {
 
   // Display all the courses
   if (courses.length) {
-    for(var i = 0; i < courses.length; i++) {
+    for (var i = 0; i < courses.length; i++) {
       addCourse(courses[i], courses, favoriteCourses, false);
     }
     document.getElementById('button-generate').onclick();
@@ -878,7 +893,7 @@ function messageOnce(str) {
 
   // Display all the favorite courses
   if (favoriteCourses.length) {
-    for(var i = 0; i < favoriteCourses.length; i++) {
+    for (var i = 0; i < favoriteCourses.length; i++) {
       addCourse(favoriteCourses[i], courses, favoriteCourses, true);
     }
     document.getElementById('button-generate').onclick();
@@ -900,13 +915,13 @@ function messageOnce(str) {
   if (detection['firefox'])
     document.getElementById('button-print').style.display = 'none';
 
-  document.getElementById('button-print').onclick = function () {
+  document.getElementById('button-print').onclick = function() {
     if (detection['chrome'] && messageOnce('print-tip'))
       alert('Pro-tip: Chrome has an option on the Print dialog to disable Headers and Footers, which makes for a prettier schedule!');
     window.print();
   };
-  
-  document.getElementById('button-clear').onclick = function () {
+
+  document.getElementById('button-clear').onclick = function() {
     if (confirm('Are you sure you want to delete all the courses you\'ve added?')) {
       save('courses', courses = []);
       save('favoriteCourses', favoriteCourses = []);
@@ -916,7 +931,7 @@ function messageOnce(str) {
     return false;
   };
 
-  document.getElementById('button-export').onclick = function () {
+  document.getElementById('button-export').onclick = function() {
     var mapOfCourses = mapCourses(schedules[schedulePosition]);
 
     var scheduleText = exportSchedule(mapOfCourses);
@@ -931,61 +946,61 @@ function messageOnce(str) {
 ///////////////////// START PARSER /////////////////////////////////////
 
 function getCourseSections(course) {
-    return course["courseSections"];
+  return course["courseSections"];
 }
 
 function filterCoursesByCalendar(courses, calendarAttribute, expected) {
-    var filteredCourses = [];
-    for(course of courses) {
-        var correctedCourse = JSON.parse(JSON.stringify(course));
-        var sectionsForCourse = filterSectionsByCalendar(getCourseSections(course),
-                calendarAttribute, expected);
-        correctedCourse["courseSections"] = sectionsForCourse; 
-        if(sectionsForCourse.length != 0) {
-            filteredCourses.push(correctedCourse);
-        }
+  var filteredCourses = [];
+  for (course of courses) {
+    var correctedCourse = JSON.parse(JSON.stringify(course));
+    var sectionsForCourse = filterSectionsByCalendar(getCourseSections(course),
+      calendarAttribute, expected);
+    correctedCourse["courseSections"] = sectionsForCourse;
+    if (sectionsForCourse.length != 0) {
+      filteredCourses.push(correctedCourse);
     }
-    return filteredCourses;
+  }
+  return filteredCourses;
 }
 
 function filterSectionsByCalendar(sections, attribute, expected) {
-    var filteredSections = []; // Has invalid sections removed.
-    for(section of sections) {
-        var correctedSection = JSON.parse(JSON.stringify(section)); // Has invalid calendar sessions removed.
-        var filteredCalendarSessions = []; // Valid calendar session array.
-        for(calendarSession of section["calendarSessions"]) {
-            if(calendarSession[attribute] === expected) {
-                filteredCalendarSessions.push(calendarSession);
-            }
-        }
-        correctedSection["calendarSessions"] = filteredCalendarSessions;
-        // If there are no calendar sections left for this section,
-        // remove the section.
-        if(filteredCalendarSessions.length != 0) {
-            filteredSections.push(correctedSection);
-        }
+  var filteredSections = []; // Has invalid sections removed.
+  for (section of sections) {
+    var correctedSection = JSON.parse(JSON.stringify(section)); // Has invalid calendar sessions removed.
+    var filteredCalendarSessions = []; // Valid calendar session array.
+    for (calendarSession of section["calendarSessions"]) {
+      if (calendarSession[attribute] === expected) {
+        filteredCalendarSessions.push(calendarSession);
+      }
     }
-    return filteredSections;
+    correctedSection["calendarSessions"] = filteredCalendarSessions;
+    // If there are no calendar sections left for this section,
+    // remove the section.
+    if (filteredCalendarSessions.length != 0) {
+      filteredSections.push(correctedSection);
+    }
+  }
+  return filteredSections;
 }
 
 function getCoursesFromAttribute(response, attribute, expected) {
-    var possibleCourses = [];
-    for(key of response) {
-        if(key[attribute] === expected) {
-            possibleCourses.push(key);
-        }
+  var possibleCourses = [];
+  for (key of response) {
+    if (key[attribute] === expected) {
+      possibleCourses.push(key);
     }
-    return possibleCourses;
+  }
+  return possibleCourses;
 }
 
 function getCoursesFromAttributeRegex(response, attribute, expression) {
   var possibleCourses = [];
-  for(key of response) {
-      if(key[attribute]) {
-          if(key[attribute].match(expression)) {
-              possibleCourses.push(key);
-          }
+  for (key of response) {
+    if (key[attribute]) {
+      if (key[attribute].match(expression)) {
+        possibleCourses.push(key);
       }
+    }
   }
   return possibleCourses;
 }
@@ -994,7 +1009,7 @@ function getCoursesFromAttributeRegex(response, attribute, expression) {
 
 function getInstructorRegex(response, expression) {
   var possibleCourses = [];
-  for(key of response) {
+  for (key of response) {
     if (key['courseSections']) {
       var allSections = key['courseSections'];
       var addIt = false;
@@ -1003,18 +1018,18 @@ function getInstructorRegex(response, expression) {
           var allProfs = section['sectionInstructor'];
           for (prof of allProfs) {
             var name = (prof['firstName'] || "") + " " + (prof['lastName'] || "");
-              if (name != " " && name.match(expression)) {
-                addIt = true;
-                break;
-              }
+            if (name != " " && name.match(expression)) {
+              addIt = true;
+              break;
             }
           }
         }
-        if (addIt) {
-          possibleCourses.push(key);
-        }
+      }
+      if (addIt) {
+        possibleCourses.push(key);
       }
     }
+  }
   return possibleCourses;
 }
 
@@ -1022,7 +1037,7 @@ function getInstructorRegex(response, expression) {
 
 function getCoursesFilled(validCourses) {
   var possibleCourses = [];
-  for(course of validCourses) {
+  for (course of validCourses) {
     for (section of key['courseSections']) {
       for (session of section['calendarSessions']) {
         console.log("Session: " + session['externalId']);
@@ -1042,49 +1057,41 @@ function getCoursesFilled(validCourses) {
 
 
 
- 
-
-
-
-
-
-
 
 function getCoursesFromDept(response, expression) {
   var possibleCourses = [];
-  for(key of response) {
+  for (key of response) {
     if (key['departments']) {
       var allDepts = key['departments'];
       for (dept of allDepts) {
-        if (dept['name'] && dept['name'] === expression) {
-            possibleCourses.push(key);
-            break;
-          }
+        if (dept['Name'] && dept['Name'] === expression) {
+          possibleCourses.push(key);
+          break;
         }
       }
     }
+  }
   return possibleCourses;
 }
 
 
 
 function attributeFilter(response, attribute, expected, mustBe) {
-    var filtered = [];
-    for(key in response) {
-        // Push the response object to the filtered array only if
-        // if has the correct attribute when we want a specific attribute,
-        // or if it does not have a specific attribute.
-        if((response[key][attribute] === expected && mustBe)
-            || (response[key][attribute] != expected && !mustBe)) {
-            filtered.push(response[key]);
-        }
+  var filtered = [];
+  for (key in response) {
+    // Push the response object to the filtered array only if
+    // if has the correct attribute when we want a specific attribute,
+    // or if it does not have a specific attribute.
+    if ((response[key][attribute] === expected && mustBe) ||
+      (response[key][attribute] != expected && !mustBe)) {
+      filtered.push(response[key]);
     }
-    return filtered;
+  }
+  return filtered;
 }
 
 
 ////////////////////////// END PARSER ////////////////////////////////////
-
 
 
 
@@ -1100,7 +1107,7 @@ function attributeFilter(response, attribute, expected, mustBe) {
 
 (function getCampuses() {
   createDropdownBlock("Campus:", "campus", "All");
-  var terms = ["All", "Claremont McKenna", "Harvey Mudd", "Pitzer", "Pomona", "Scripps"];
+  var terms = ["All", "Claremont McKenna", "Harvey Mudd", "Pitzer", "Pomona", "Scripps", "Other"];
   createDropdown("#campus", terms);
 }());
 
@@ -1170,28 +1177,36 @@ function attributeFilter(response, attribute, expected, mustBe) {
 
 
 
-
-
-
-
-
-
 function createDropdownBlock(label, id, defaultText) {
-  var div = $("<div>", {class: "dropdown my-dropdown col-sm-6", text: label});
-  var button = $("<button>", {class: "btn btn-primary dropdown-toggle dropdown-button", id: id + "_btn", text: defaultText, "data-toggle": "dropdown", realVal: defaultText});
+  var div = $("<div>", {
+    class: "dropdown my-dropdown col-sm-6",
+    text: label
+  });
+  var button = $("<button>", {
+    class: "btn btn-primary dropdown-toggle dropdown-button",
+    id: id + "_btn",
+    text: defaultText,
+    "data-toggle": "dropdown",
+    realVal: defaultText
+  });
   var caret = getCaret();
   button.append(caret);
   div.append(button);
-  var list = $("<ul>", {class: "dropdown-menu", id: id});
+  var list = $("<ul>", {
+    class: "dropdown-menu",
+    id: id
+  });
   div.append(list);
   $("#search-area").append(div);
 }
 
 function createDropdown(elementID, namesList) {
   var term;
-    for (term of namesList) {
+  for (term of namesList) {
     var newListItem = $("<li>");
-    var newLink = $("<a>", {text: term});
+    var newLink = $("<a>", {
+      text: term
+    });
     newListItem.append(newLink);
     $(elementID).append(newListItem);
   }
@@ -1215,62 +1230,80 @@ function getCaret() {
 
 function showResult(courseIndex) {
   //Create a row to hold the results
-      //TODO: take out
+  //TODO: take out
   var courseObj = globalCourseSearch[courseIndex];
-    if (courseObj) {
-      if (courseObj['courseTitle'] === 'Algorithms') {
-        console.log(courseObj);
-      } else {
-        //console.log(courseObj['courseTitle']);
-      }
+  if (courseObj) {
+    if (courseObj['courseTitle'] === 'Algorithms') {
+      console.log(courseObj);
+    } else {
+      //console.log(courseObj['courseTitle']);
+    }
   } else {
 
   }
 
 
-  
-  var row = $("<tr>", {courseIndex: courseIndex});
-  row.append($("<td>", {text: courseObj['courseNumber'] || 'NO SECTION'}));
-  row.append($("<td>", {text: courseObj['courseTitle'] || 'No title'}));
+
+  var row = $("<tr>", {
+    courseIndex: courseIndex
+  });
+  row.append($("<td>", {
+    text: courseObj['courseNumber'] || 'NO SECTION'
+  }));
+  row.append($("<td>", {
+    text: courseObj['courseTitle'] || 'No title'
+  }));
   var instructors = '';
-  for(var section of courseObj['courseSections']) for(var instructordata of section['sectionInstructor']) {
-    if(instructordata['lastName']) {
-      if(instructors.length > 0) instructors += ', ';
-      instructors += instructordata['lastName']
-    } else if(instructordata['firstName']) {
-      if(instructors.length > 0) instructors += ', ';
-      instructors += instructordata['firstName']
+  for (var section of courseObj['courseSections'])
+    for (var instructordata of section['sectionInstructor']) {
+      if (instructordata['lastName']) {
+        if (instructors.length > 0) instructors += ', ';
+        instructors += instructordata['lastName']
+      } else if (instructordata['firstName']) {
+        if (instructors.length > 0) instructors += ', ';
+        instructors += instructordata['firstName']
+      }
     }
-  }
-  row.append($("<td>", {text: instructors}));
+  row.append($("<td>", {
+    text: instructors
+  }));
   var timeslots = '';
   var isfirsttimeslot = true;
   var courseJson = courseObj;
-  for(var section of courseJson['courseSections']) {
-    if(!isfirsttimeslot) {
+  for (var section of courseJson['courseSections']) {
+    if (!isfirsttimeslot) {
       timeslots += '; ';
     }
     var timeslot = '';
     var isFirstTime = true;
-    for(var schedule of section['courseSectionSchedule']) {
-      if(!isFirstTime) {
+    for (var schedule of section['courseSectionSchedule']) {
+      if (!isFirstTime) {
         timeslot += ', ';
         isFirstTime = true;
       }
-      timeslot += schedule['classMeetingDays'].replace(/-/g, '');
+      timeslot += schedule['ClassMeetingDays'].replace(/-/g, '');
       timeslot += '\u00a0';
-      timeslot += toAmPmTime(schedule['classBeginningTime']);
+      timeslot += toAmPmTime(schedule['ClassBeginningTime']);
       timeslot += '-';
-      timeslot += toAmPmTime(schedule['classEndingTime']);
+      timeslot += toAmPmTime(schedule['ClassEndingTime']);
     }
     timeslots += timeslot;
     isfirsttimeslot = false;
   }
-  row.append($("<td>", {text: timeslots}));
+  row.append($("<td>", {
+    text: timeslots
+  }));
   //row.append($("<td>", {text: ''}));
   var buttonDiv = $("<td>");
-  buttonDiv.append($("<button>", {text: "Schedule", class:"btn btn-sm btn-success schedule-button", courseIndex: courseIndex}));
-  var favButton = $("<button>", {class:"btn btn-sm btn-primary favorite-button", courseIndex: courseIndex});
+  buttonDiv.append($("<button>", {
+    text: "Schedule",
+    class: "btn btn-sm btn-success schedule-button",
+    courseIndex: courseIndex
+  }));
+  var favButton = $("<button>", {
+    class: "btn btn-sm btn-primary favorite-button",
+    courseIndex: courseIndex
+  });
   favButton.append("<i class='glyphicon glyphicon-star-empty' style='font-size:16px;'></i>");
   buttonDiv.append(favButton);
 
@@ -1282,64 +1315,68 @@ function showResult(courseIndex) {
 function repopulateChart() {
   $("#results-table").find("tbody").remove();
   $("#results-table").append($("<tbody>"));
-  for(var i = 0; i < globalCourseSearch.length; i++) {
+  for (var i = 0; i < globalCourseSearch.length; i++) {
     showResult(i);
   }
   addButtonListeners();
 }
 
 function addButtonListeners() {
-$("#results-table tbody tr").click(function() {
-  //Expand row
-  var newRow = $("<tr>", {class:"open-course"});
-  newRow.append($("<td>", {colspan:"100%", class:"expanded"}));
-  var openRow = null;
-  $("#results-table").children('tbody').each(function() {
-    $(".expanded").remove();
-    if ($(".open")[0]) {
-      //If open, remove it
-      var openBox = $(".open")[0];
-      openBox.className = "";
-      openRow = openBox;
+  $("#results-table tbody tr").click(function() {
+    //Expand row
+    var newRow = $("<tr>", {
+      class: "open-course"
+    });
+    newRow.append($("<td>", {
+      colspan: "100%",
+      class: "expanded"
+    }));
+    var openRow = null;
+    $("#results-table").children('tbody').each(function() {
+      $(".expanded").remove();
+      if ($(".open")[0]) {
+        //If open, remove it
+        var openBox = $(".open")[0];
+        openBox.className = "";
+        openRow = openBox;
+      }
+    });
+    if (openRow == this) {
+      return;
     }
+    $(newRow).insertAfter(this);
+    this.className += "open";
+    //todo:take out
+    tempCourse = getCoursesFromAttributeRegex(filterCoursesByCalendar(globalCourseData, "designator", "SP2017"), 'courseNumber', /.*070.*/)[0];
+    addExpandedData(this.getAttribute('courseindex'));
+  })
+
+  $(".schedule-button").click(function() {
+    event.stopPropagation();
+    this.classList += " disabled";
+    courseJson = globalCourseSearch[this.getAttribute('courseIndex')];
+    var courseData = toCourseObject(courseJson);
+    globalCourses.push(courseData);
+    addCourse(courseData, globalCourses, globalFavCourses, false);
+    document.getElementById('button-generate').disabled = false;
+    save('courses', globalCourses);
   });
-  if (openRow == this) {
-    return;
-  }
-  $(newRow).insertAfter(this);
-  this.className += "open";
-  //todo:take out
-  tempCourse = getCoursesFromAttributeRegex(filterCoursesByCalendar(globalCourseData, "designator", "SP2017"), 'courseNumber', /.*070.*/)[0];
-  addExpandedData(this.getAttribute('courseindex'));
-})
-
-$(".schedule-button").click(function() {
-  event.stopPropagation();
-  this.classList += " disabled";
-  courseJson = globalCourseSearch[this.getAttribute('courseIndex')];
-  var courseData = toCourseObject(courseJson);
-  globalCourses.push(courseData);
-  addCourse(courseData, globalCourses, globalFavCourses, false);
-  document.getElementById('button-generate').disabled = false;
-  save('courses', globalCourses);
-});
 
 
-$(".favorite-button").click(function() {
-  event.stopPropagation();
-  this.classList += " disabled";
-  courseJson = globalCourseSearch[this.getAttribute('courseIndex')];
-  var courseData = toCourseObject(courseJson);
-  globalFavCourses.push(courseData);
-  addCourse(courseData, globalCourses, globalFavCourses, true);
-  save('favoriteCourses', globalFavCourses);
-});
+  $(".favorite-button").click(function() {
+    event.stopPropagation();
+    this.classList += " disabled";
+    courseJson = globalCourseSearch[this.getAttribute('courseIndex')];
+    var courseData = toCourseObject(courseJson);
+    globalFavCourses.push(courseData);
+    addCourse(courseData, globalCourses, globalFavCourses, true);
+    save('favoriteCourses', globalFavCourses);
+  });
 }
 
 
-var courses = [1,2,3];
+var courses = [1, 2, 3];
 var sections = [];
-
 
 
 
@@ -1349,8 +1386,8 @@ function addExpandedData(index) {
   var title = "";
   if (courseObj['courseTitle']) {
     title = courseObj['courseTitle'];
-  }   
-  
+  }
+
   var code = "";
   if (courseObj['courseNumber']) {
     code = courseObj['courseNumber']
@@ -1359,8 +1396,8 @@ function addExpandedData(index) {
   var dept = "";
   if (courseObj['departments']) {
     jQuery.each(courseObj['departments'], function() {
-      if (this['name']) {
-        dept += this['name'] + ' ';
+      if (this['Name']) {
+        dept += this['Name'] + ' ';
       }
     })
     courseTitle = courseObj['courseTitle']
@@ -1368,12 +1405,16 @@ function addExpandedData(index) {
 
   var nameLine = "<h4>" + title + " (" + code + ")</h4>";
   var deptLine = "<h5>Dept: " + dept + "</h5>";
+  var descLine = "<p style=\"text-align: left;\">" + courseObj['description'] + "</p>"
   var newRow = $(".expanded")[0];
-  var subTable = $("<table>", {class: "table table-bordered"});
+  var subTable = $("<table>", {
+    class: "table table-bordered"
+  });
   var header = '<thead><th>Section</th><th>Professor</th><th>Times</th><th>Dates</th><th>Seats Filled</th></thead>'
   $(header).appendTo(subTable)
   $(nameLine).appendTo(newRow);
   $(deptLine).appendTo(newRow);
+  $(descLine).appendTo(newRow);
   $(subTable).appendTo(newRow);
 
 
@@ -1384,87 +1425,83 @@ function addExpandedData(index) {
 
 
 
-  var prof = "";
-  if (this['sectionInstructor']) {
-    var instructordata = this['sectionInstructor'];
-    jQuery.each(instructordata, function() {
-      if(this['lastName']) {
-        if(prof.length > 0) {
-          prof += ', ';
+    var prof = "";
+    if (this['sectionInstructor']) {
+      var instructordata = this['sectionInstructor'];
+      jQuery.each(instructordata, function() {
+        if (this['lastName']) {
+          if (prof.length > 0) {
+            prof += ', ';
+          }
+          prof += this['lastName']
+        } else if (this['firstName']) {
+          if (prof.length > 0) {
+            prof += ', ';
+          }
+          prof += this['firstName']
         }
-        prof += this['lastName']
-      } else if(this['firstName']) {
-        if(prof.length > 0) {
-          prof += ', ';
+      });
+    }
+
+    var term = "";
+    var start = "";
+    var end = "";
+    if (this['calendarSessions']) {
+      var session = this['calendarSessions'][0]
+      if (session['externalId']) {
+        term = session['externalId']
+      }
+      if (session['beginDate']) {
+        start = session['beginDate']
+      }
+      if (session['endDate']) {
+        end = session['endDate']
+      }
+    }
+
+
+    var times = ""
+    if (this['courseSectionSchedule']) {
+      jQuery.each(this['courseSectionSchedule'], function() {
+        if (this['ClassMeetingDays']) {
+          times += this['ClassMeetingDays'].replace(/-/g, '');
+          if (this['ClassBeginningTime']) {
+            times += ': ' + toAmPmTime(this['ClassBeginningTime']);
+          }
+          if (this['ClassEndingTime']) {
+            times += '-' + toAmPmTime(this['ClassEndingTime']);
+          }
         }
-        prof += this['firstName']
-      }
-    });
-  }
-
-  var term = "";
-  var start = "";
-  var end = "";
-  if (this['calendarSessions']) {
-    var session = this['calendarSessions'][0]
-    if (session['externalId']) {
-      term = session['externalId']
-    }
-    if (session['beginDate']) {
-      start = session['beginDate']
-    }
-    if (session['endDate']) {
-      end = session['endDate']
-    }
-  }
-
-  
-  var times = ""
-  if (this['courseSectionSchedule']) {
-    jQuery.each(this['courseSectionSchedule'], function() {
-      if(this['classMeetingDays']) {
-        times += this['classMeetingDays'].replace(/-/g, '');
-      if (this['classBeginningTime']) {
-        times += ': ' + toAmPmTime(this['classBeginningTime']);
-      }
-      if (this['classEndingTime']) {
-        times += '-' + toAmPmTime(this['classEndingTime']);
-      }
+      });
     }
 
+    var filled = "??"
+    if (this['currentEnrollment']) {
+      filled = this['currentEnrollment'];
+    }
 
+    var capacity = "??"
+    if (this['capacity']) {
+      capacity = this['capacity'];
+    }
 
-    });
-  }
-
-  var filled = "??"
-  if (this['currentEnrollment']) {
-    filled = this['currentEnrollment'];
-  }
-
-  var capacity = "??"
-  if (this['capacity']) {
-    capacity = this['capacity'];
-  }
-  
 
     //Section string
 
-  var sectionLine = "<td>" + index + "</td>";
-  var profLine = "<td>" + prof + "</td>";
-  var scheduleLine = "<td>" + times + "</td>";
-  var timeLine = "<td>" + start + " - " + end + "</td>";
-  var availabilityLine = "<td>" + filled + "/" + capacity + " seats</td>";
+    var sectionLine = "<td>" + index + "</td>";
+    var profLine = "<td>" + prof + "</td>";
+    var scheduleLine = "<td>" + times + "</td>";
+    var timeLine = "<td>" + start + " - " + end + "</td>";
+    var availabilityLine = "<td>" + filled + "/" + capacity + " seats</td>";
 
-  var subRow = $("<tr>");
-  subRow.append(sectionLine);
-  subRow.append(profLine);
-  subRow.append(scheduleLine);
-  subRow.append(timeLine);
-  subRow.append(availabilityLine);
-  $(subRow).appendTo(subTable);
+    var subRow = $("<tr>");
+    subRow.append(sectionLine);
+    subRow.append(profLine);
+    subRow.append(scheduleLine);
+    subRow.append(timeLine);
+    subRow.append(availabilityLine);
+    $(subRow).appendTo(subTable);
 
-  index++;
+    index++;
   });
 }
-
