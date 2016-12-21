@@ -6,6 +6,9 @@ var globalTerm;
 
 function lingkCallback(json) {
   globalCourseData = json['data'];
+  console.log("IT'S STARTING");
+  console.log(globalCourseData);
+  console.log('ALL DONE')
   getAllDepartments();
   addExtraAttributes();
   updateSearch();
