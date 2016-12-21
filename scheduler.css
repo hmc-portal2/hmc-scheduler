@@ -161,6 +161,13 @@ td {
 }
 
 
+.expanded {
+	background-color: #cfe0fc;
+}
+
+.open td {
+	background-color: #cfe0fc;
+}
 
 
 #demo-textarea {
@@ -236,8 +243,13 @@ td {
 
 
 #results-area {
+	margin: 5px;
+	padding: 5px;
 	height: 500px;
 	overflow-y: scroll;
+	outline-style: ridge;
+	outline-width: 6px;
+	outline-color: #006dcc;
 }
 
 .schedule-button {

@@ -1230,19 +1230,7 @@ function getCaret() {
 
 function showResult(courseIndex) {
   //Create a row to hold the results
-  //TODO: take out
   var courseObj = globalCourseSearch[courseIndex];
-  if (courseObj) {
-    if (courseObj['courseTitle'] === 'Algorithms') {
-      console.log(courseObj);
-    } else {
-      //console.log(courseObj['courseTitle']);
-    }
-  } else {
-
-  }
-
-
 
   var row = $("<tr>", {
     courseIndex: courseIndex
