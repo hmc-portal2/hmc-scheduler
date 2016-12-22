@@ -6,9 +6,6 @@ var globalTerm;
 
 function lingkCallback(json) {
   globalCourseData = json['data'];
-  console.log("IT'S STARTING");
-  console.log(globalCourseData);
-  console.log('ALL DONE')
   getAllDepartments();
   addExtraAttributes();
   updateSearch();
@@ -82,9 +79,7 @@ function addExtraAttributes() {
         var full = true;
         if (section['capacity'] && section['currentEnrollment'] && (section['currentEnrollment'] < section['capacity'])) {
           full = false;
-        } else {
-          console.log("it's full");
-        }
+        } 
         session.full = full;
       }
     }
@@ -1040,9 +1035,7 @@ function getCoursesFilled(validCourses) {
   for (course of validCourses) {
     for (section of key['courseSections']) {
       for (session of section['calendarSessions']) {
-        console.log("Session: " + session['externalId']);
         if (session['designator'] === globalTerm) {
-          console.log("Filled: " + session['full']);
           if (session['full'] === false) {
             possibleCourses.push(course);
           }
@@ -1050,8 +1043,6 @@ function getCoursesFilled(validCourses) {
       }
     }
   }
-  console.log("SIZE");
-  console.log(possibleCourses.length);
   return possibleCourses;
 }
 
@@ -1309,34 +1300,55 @@ function repopulateChart() {
   addButtonListeners();
 }
 
+
+function expandOrCollapse(row) {
+
+  //Create expanded row
+  var newRow = $("<tr>", {
+    class: "open-course"
+  });
+
+  // Add a click listener to the new row
+  $("#results-table").on('click', '.open-course', function(){
+    expandOrCollapse(this);
+  });
+
+  // Put one element inside the new expanded row
+  newRow.append($("<td>", {
+    colspan: "100%",
+    class: "expanded"
+  }));
+
+  // Close the current open row, if it exists
+  var openRow = null;
+  $("#results-table").children('tbody').each(function() {
+    $(".open-course").remove();
+    if ($(".open")[0]) {
+      //If open, remove that class
+      var openBox = $(".open")[0];
+      openBox.className = "";
+      openRow = openBox;
+    }
+  });
+
+  // If we clicked the current open row or the expanded row, we're done.
+  if (row.className.indexOf('open-course') > -1 || (openRow != null && row.getAttribute('courseindex') == openRow.getAttribute('courseindex'))) {
+    return;
+  }
+
+  // Add the new row
+  $(newRow).insertAfter(row);
+  row.className += "open";
+  //todo:take out
+  tempCourse = getCoursesFromAttributeRegex(filterCoursesByCalendar(globalCourseData, "designator", "SP2017"), 'courseNumber', /.*070.*/)[0];
+  addExpandedData(row.getAttribute('courseindex'));
+}
+
+
+
 function addButtonListeners() {
   $("#results-table tbody tr").click(function() {
-    //Expand row
-    var newRow = $("<tr>", {
-      class: "open-course"
-    });
-    newRow.append($("<td>", {
-      colspan: "100%",
-      class: "expanded"
-    }));
-    var openRow = null;
-    $("#results-table").children('tbody').each(function() {
-      $(".expanded").remove();
-      if ($(".open")[0]) {
-        //If open, remove it
-        var openBox = $(".open")[0];
-        openBox.className = "";
-        openRow = openBox;
-      }
-    });
-    if (openRow == this) {
-      return;
-    }
-    $(newRow).insertAfter(this);
-    this.className += "open";
-    //todo:take out
-    tempCourse = getCoursesFromAttributeRegex(filterCoursesByCalendar(globalCourseData, "designator", "SP2017"), 'courseNumber', /.*070.*/)[0];
-    addExpandedData(this.getAttribute('courseindex'));
+    expandOrCollapse(this);
   })
 
   $(".schedule-button").click(function() {
