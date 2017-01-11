@@ -74,6 +74,10 @@ function addExtraAttributes() {
     // Default: starts out as true (and will remain that way if there is no data on fullness)
 
     for (section of key['courseSections']) {
+      if(!section['calendarSessions']) {
+        console.log(key, section)
+        continue;
+      }
       for (session of section['calendarSessions']) {
         var term = session['designator'];
         var full = true;
@@ -963,6 +967,7 @@ function filterSectionsByCalendar(sections, attribute, expected) {
   for (section of sections) {
     var correctedSection = JSON.parse(JSON.stringify(section)); // Has invalid calendar sessions removed.
     var filteredCalendarSessions = []; // Valid calendar session array.
+    if(!section['calendarSessions']) continue;
     for (calendarSession of section["calendarSessions"]) {
       if (calendarSession[attribute] === expected) {
         filteredCalendarSessions.push(calendarSession);
@@ -1255,6 +1260,10 @@ function showResult(courseIndex) {
     }
     var timeslot = '';
     var isFirstTime = true;
+    if(!section['courseSectionSchedule']) {
+      console.log(courseJson, section);
+      continue;
+    }
     for (var schedule of section['courseSectionSchedule']) {
       if (!isFirstTime) {
         timeslot += ', ';
