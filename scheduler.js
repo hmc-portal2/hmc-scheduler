@@ -3,6 +3,7 @@ var globalCourseSearch = [];
 var globalCourses;
 var globalFavCourses;
 var globalTerm;
+var globalShowMoreIndex;
 
 function lingkCallback(json) {
   globalCourseData = json['data'];
@@ -75,7 +76,7 @@ function addExtraAttributes() {
 
     for (section of key['courseSections']) {
       if(!section['calendarSessions']) {
-        console.log(key, section)
+        //TODO: why? console.log(key, section)
         continue;
       }
       for (session of section['calendarSessions']) {
@@ -1095,8 +1096,8 @@ function attributeFilter(response, attribute, expected, mustBe) {
 (function getCourseTerms() {
   //TODO: Call some function to have portal tell us which semesters are available
   //PLACEHOLDER:
-  createDropdownBlock("Course Term:", "course-terms", "SP2017");
-  var terms = ["All", "SP2017", "FA2016", "SP2016"];
+  createDropdownBlock("Course Term:", "course-terms", "FA2017");
+  var terms = ["All", "FA2017", "SP2017", "FA2016", "SP2016"];
   createDropdown("#course-terms", terms);
 }());
 
@@ -1261,7 +1262,7 @@ function showResult(courseIndex) {
     var timeslot = '';
     var isFirstTime = true;
     if(!section['courseSectionSchedule']) {
-      console.log(courseJson, section);
+      //TODO: why? console.log(courseJson, section);
       continue;
     }
     for (var schedule of section['courseSectionSchedule']) {
@@ -1303,8 +1304,51 @@ function showResult(courseIndex) {
 function repopulateChart() {
   $("#results-table").find("tbody").remove();
   $("#results-table").append($("<tbody>"));
-  for (var i = 0; i < globalCourseSearch.length; i++) {
+  for (var i = 0; i < globalCourseSearch.length && i < 100; i++) {
     showResult(i);
+  }
+  if(i < globalCourseSearch.length) {
+    globalShowMoreIndex = i
+    addShowMore()
+  }
+  addButtonListeners();
+}
+
+function addShowMore() {
+  var row = $('<tr>', {
+    id: 'show-more-row'
+  });
+  var cell = $('<td>', {
+    colspan: 42
+  });
+  var button = $('<button>', {
+    class: 'btn btn-sm btn-primary show-more-button',
+    id: 'show-more-btn',
+    text: globalShowMoreIndex+' of '+globalCourseSearch.length+' results. Show More...'
+  });
+  cell.append(button);
+  row.append(cell);
+  $('#results-table').append(row);
+
+  $('#show-more-btn').on('click.showmore', function() {
+    showMore();
+  });
+}
+
+function removeShowMore() {
+  $('#show-more-row').remove()
+}
+
+function showMore() {
+  removeButtonListeners();
+  removeShowMore();
+  for (var i = globalShowMoreIndex; 
+       i < globalCourseSearch.length && i < globalShowMoreIndex + 100; i++) {
+    showResult(i);
+  }
+  if(i < globalCourseSearch.length) {
+    globalShowMoreIndex = i
+    addShowMore()
   }
   addButtonListeners();
 }
@@ -1349,18 +1393,22 @@ function expandOrCollapse(row) {
   $(newRow).insertAfter(row);
   row.className += "open";
   //todo:take out
-  tempCourse = getCoursesFromAttributeRegex(filterCoursesByCalendar(globalCourseData, "designator", "SP2017"), 'courseNumber', /.*070.*/)[0];
+  tempCourse = getCoursesFromAttributeRegex(filterCoursesByCalendar(globalCourseData, "designator", "FA2017"), 'courseNumber', /.*070.*/)[0];
   addExpandedData(row.getAttribute('courseindex'));
 }
 
-
+function removeButtonListeners() {
+  $("#results-table tbody tr").off('click.addcollapse')
+  $(".schedule-button").off('click.schedule')
+  $(".favorite-button").off('click.favorite')
+}
 
 function addButtonListeners() {
-  $("#results-table tbody tr").click(function() {
+  $("#results-table tbody tr").on('click.addcollapse', function() {
     expandOrCollapse(this);
   })
 
-  $(".schedule-button").click(function() {
+  $(".schedule-button").on('click.schedule', function() {
     event.stopPropagation();
     this.classList += " disabled";
     courseJson = globalCourseSearch[this.getAttribute('courseIndex')];
@@ -1372,7 +1420,7 @@ function addButtonListeners() {
   });
 
 
-  $(".favorite-button").click(function() {
+  $(".favorite-button").on('click.favorite', function() {
     event.stopPropagation();
     this.classList += " disabled";
     courseJson = globalCourseSearch[this.getAttribute('courseIndex')];
