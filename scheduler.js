@@ -1283,6 +1283,17 @@ function showResult(courseIndex) {
     text: timeslots
   }));
   //row.append($("<td>", {text: ''}));
+
+  
+  var crCell = $("<td>")
+  crCell.append($("<a>", {
+    text: "Claremontreview",
+    href: "http://claremontreview.com/courses/" + courseObj['courseNumber'].replace(/(\s)+/g, '_'),
+    target: "blank",
+    style: "text-decoration:underline; color:0x4444cc;"
+  }));
+  row.append(crCell);
+  
   var buttonDiv = $("<td>");
   buttonDiv.append($("<button>", {
     text: "Schedule",
