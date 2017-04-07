@@ -84,9 +84,6 @@ function addExtraAttributes() {
           section['calendarSessions'] = [{designator: termMatch[2]}];
         }
         section['sectionName'] = termMatch[1];
-        if(section['sectionName'] === 'CSCI105  HM-01 FA2017') {
-          console.log(section)
-        }
         if(!sectionTimeMap[termMatch[1]]) {
           sectionTimeMap[termMatch[1]] = section;
         } else {
@@ -999,7 +996,7 @@ function filterSectionsByCalendar(sections, attribute, expected) {
     var filteredCalendarSessions = []; // Valid calendar session array.
     if(!section['calendarSessions']) continue;
     for (calendarSession of section["calendarSessions"]) {
-      if (calendarSession[attribute] === expected) {
+      if (calendarSession[attribute].startsWith(expected)) {
         filteredCalendarSessions.push(calendarSession);
       }
     }
