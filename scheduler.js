@@ -84,6 +84,9 @@ function addExtraAttributes() {
           section['calendarSessions'] = [{designator: termMatch[2]}];
         }
         section['sectionName'] = termMatch[1];
+        if(section['sectionName'] === 'CSCI105  HM-01 FA2017') {
+          console.log(section)
+        }
         if(!sectionTimeMap[termMatch[1]]) {
           sectionTimeMap[termMatch[1]] = section;
         } else {
@@ -96,7 +99,7 @@ function addExtraAttributes() {
               realSection['courseSectionSchedule'].push(schedule);
             }
           }
-          key['courseSections'].splice(i);
+          key['courseSections'].splice(i,1);
           i--;
           continue;
         }
