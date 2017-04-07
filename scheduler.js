@@ -76,11 +76,19 @@ function addExtraAttributes() {
 
     for (section of key['courseSections']) {
       if(!section['calendarSessions']) {
-        //TODO: why? console.log(key, section)
-        continue;
+        termMatch = /((?:FA|SP|SU)20[0-9][0-9](?:(?:F|P|S)[1-9])?)[0-9]*$/.exec(
+        section['externalId']);
+        if(termMatch) {
+          // missing calendarSessions should be there: try to fix it
+          section['calendarSessions'] = [{designator: termMatch[1]}];
+        } else {
+          //TODO: what are these broken sections?
+          console.log(key,section);
+          continue;
+        }
       }
       for (session of section['calendarSessions']) {
-        var term = session['designator'];
+        //var term = session['designator'];
         var full = true;
         if (section['capacity'] && section['currentEnrollment'] && (section['currentEnrollment'] < section['capacity'])) {
           full = false;
