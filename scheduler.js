@@ -73,19 +73,37 @@ function addExtraAttributes() {
     // Currently, full is false if there is even 1 unfilled section
 
     // Default: starts out as true (and will remain that way if there is no data on fullness)
-
-    for (section of key['courseSections']) {
-      if(!section['calendarSessions']) {
-        termMatch = /((?:FA|SP|SU)20[0-9][0-9](?:(?:F|P|S)[1-9])?)[0-9]*$/.exec(
+    sectionTimeMap = {};
+    for (var i = 0; i < key['courseSections'].length; i++) {
+      section = key['courseSections'][i];
+      termMatch = /^(.*((?:FA|SP|SU)20[0-9][0-9](?:(?:F|P|S)[1-9])?))[0-9]*$/.exec(
         section['externalId']);
-        if(termMatch) {
-          // missing calendarSessions should be there: try to fix it
-          section['calendarSessions'] = [{designator: termMatch[1]}];
+      if(termMatch) {
+        // missing calendarSessions should be there: try to fix it
+        if(!section['calendarSessions']) {
+          section['calendarSessions'] = [{designator: termMatch[2]}];
+        }
+        section['sectionName'] = termMatch[1];
+        if(!sectionTimeMap[termMatch[1]]) {
+          sectionTimeMap[termMatch[1]] = section;
         } else {
-          //TODO: what are these broken sections?
-          console.log(key,section);
+          realSection = sectionTimeMap[termMatch[1]];
+          if(section['courseSectionSchedule']) {
+            if(!realSection['courseSectionSchedule']) {
+              realSection['courseSectionSchedule'] = [];
+            }
+            for(var schedule of section['courseSectionSchedule']) {
+              realSection['courseSectionSchedule'].push(schedule);
+            }
+          }
+          key['courseSections'].splice(i);
+          i--;
           continue;
         }
+      } else {
+        //TODO: what are these broken sections?
+        console.log(key,section);
+        continue;
       }
       for (session of section['calendarSessions']) {
         //var term = session['designator'];
@@ -215,8 +233,8 @@ function toCourseObject(courseJson) {
     for (var schedule of section['courseSectionSchedule']) {
       if (!isFirstTime) {
         timeslot += ', ';
-        isFirstTime = true;
       }
+      isFirstTime = false;
       timeslot += schedule['ClassMeetingDays'].replace(/-/g, '');
       timeslot += ' ';
       timeslot += toAmPmTime(schedule['ClassBeginningTime']);
@@ -1276,8 +1294,8 @@ function showResult(courseIndex) {
     for (var schedule of section['courseSectionSchedule']) {
       if (!isFirstTime) {
         timeslot += ', ';
-        isFirstTime = true;
       }
+      isFirstTime = false;
       timeslot += schedule['ClassMeetingDays'].replace(/-/g, '');
       timeslot += '\u00a0';
       timeslot += toAmPmTime(schedule['ClassBeginningTime']);
@@ -1538,8 +1556,13 @@ function addExpandedData(index) {
 
     var times = ""
     if (this['courseSectionSchedule']) {
+      var isFirstTime = true;
       jQuery.each(this['courseSectionSchedule'], function() {
         if (this['ClassMeetingDays']) {
+          if(!isFirstTime) {
+            times += ',<br>';
+          }
+          isFirstTime = false;
           times += this['ClassMeetingDays'].replace(/-/g, '');
           if (this['ClassBeginningTime']) {
             times += ': ' + toAmPmTime(this['ClassBeginningTime']);
