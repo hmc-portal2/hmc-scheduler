@@ -73,9 +73,10 @@ function addExtraAttributes() {
     // Currently, full is false if there is even 1 unfilled section
 
     // Default: starts out as true (and will remain that way if there is no data on fullness)
-    sectionTimeMap = {};
+    //sectionTimeMap = {};
     for (var i = 0; i < key['courseSections'].length; i++) {
       section = key['courseSections'][i];
+      // was there to fix API bug that has been fixed
       termMatch = /^(.*((?:FA|SP|SU)20[0-9][0-9](?:(?:F|P|S)[1-9])?))[0-9]*$/.exec(
         section['externalId']);
       if(termMatch) {
@@ -84,7 +85,7 @@ function addExtraAttributes() {
           section['calendarSessions'] = [{designator: termMatch[2]}];
         }
         section['sectionName'] = termMatch[1];
-        if(!sectionTimeMap[termMatch[1]]) {
+        /*if(!sectionTimeMap[termMatch[1]]) {
           sectionTimeMap[termMatch[1]] = section;
         } else {
           realSection = sectionTimeMap[termMatch[1]];
@@ -99,7 +100,7 @@ function addExtraAttributes() {
           key['courseSections'].splice(i,1);
           i--;
           continue;
-        }
+        }*/
       } else {
         //TODO: what are these broken sections?
         console.log(key,section);
