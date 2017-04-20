@@ -472,8 +472,9 @@ function drawSchedule(schedule) {
   // Add each time slot
   schedule.forEach(function(timeSlot) {
     var div = document.createElement('div');
+    div.classList.add('classDiv')
     div.style.top = hourHeight * (timeSlot.from - beginHour) + 'px';
-    div.style.backgroundColor = timeSlot.course.color || randomColor(timeSlot.course.name);
+    div.style.setProperty('background-color', timeSlot.course.color || randomColor(timeSlot.course.name), 'important');
     div.innerHTML = (options.showSections && timeSlot.section ?
         timeSlot.section.replace(/^([^(]+)\((.*)\)/, function(_, code, profs) {
           return '<b>' + code + '</b><br />' + profs;

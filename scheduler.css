@@ -228,6 +228,10 @@ td {
   font-weight: normal;
 }
 
+.only-print {
+	display: none;
+}
+
 @media print {
 	html {
 		-webkit-print-color-adjust: exact;
@@ -236,8 +240,11 @@ td {
 		width: auto;
 		margin: 0;
 	}
-	#controls {
+	.no-print {
 		display: none;
+	}
+	.only-print {
+		display: block;
 	}
 }
 
