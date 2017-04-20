@@ -1447,7 +1447,7 @@ function addButtonListeners() {
     expandOrCollapse(this);
   })
 
-  $(".schedule-button").on('click.schedule', function() {
+  $(".schedule-button").on('click.schedule', function(event) {
     event.stopPropagation();
     this.classList += " disabled";
     courseJson = globalCourseSearch[this.getAttribute('courseIndex')];
@@ -1459,7 +1459,7 @@ function addButtonListeners() {
   });
 
 
-  $(".favorite-button").on('click.favorite', function() {
+  $(".favorite-button").on('click.favorite', function(event) {
     event.stopPropagation();
     this.classList += " disabled";
     courseJson = globalCourseSearch[this.getAttribute('courseIndex')];
