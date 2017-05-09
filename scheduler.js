@@ -474,7 +474,11 @@ function drawSchedule(schedule) {
     var div = document.createElement('div');
     div.classList.add('classDiv')
     div.style.top = hourHeight * (timeSlot.from - beginHour) + 'px';
-    div.style.setProperty('background-color', timeSlot.course.color || randomColor(timeSlot.course.name), 'important');
+    div.style.setProperty('background-color', 'unset');
+    var bgColor = timeSlot.course.color || randomColor(timeSlot.course.name);
+    // this way, color is maintained even when printing
+    div.style.setProperty('box-shadow', 'inset 0 0 0 1000px '+bgColor, 'important')
+    //div.style.setProperty('background-color', bgColor, 'important');
     div.innerHTML = (options.showSections && timeSlot.section ?
         timeSlot.section.replace(/^([^(]+)\((.*)\)/, function(_, code, profs) {
           return '<b>' + code + '</b><br />' + profs;

@@ -233,9 +233,6 @@ td {
 }
 
 @media print {
-	html {
-		-webkit-print-color-adjust: exact;
-	}
 	body {
 		width: auto;
 		margin: 0;
@@ -246,23 +243,7 @@ td {
 	.only-print {
 		display: block;
 	}
-	.classDiv {
-		border: 1px solid black;
-	}
 }
-
-@media \\0 print {
-	.classDiv {
-		border: none;
-	}
-}
-
-@media print and (-webkit-min-device-pixel-ratio:0) and (min-resolution: .001dpcm) {
-	.classDiv {
-		border: none;
-	}
-}
-
 
 #results-area {
 	margin: 5px;
