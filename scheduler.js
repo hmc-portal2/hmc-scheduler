@@ -581,11 +581,13 @@ function formatDate(date) {
 
 function VEventObject(timeBlocks) {
   this.weekdays = [];
-  for (i in timeBlocks)
+  for (i in timeBlocks) {
     this.weekdays.push(timeBlocks[i].weekday);
+  }
   this.startTime = timeBlocks[0].from;
   this.endTime = timeBlocks[0].to;
-  this.startDate = new Date(Date.parse(timeBlocks[0].course.data.startDate));
+
+  this.startDate = new Date(Date.parse(timeBlocks[0].sectionData.calendarSessions[0].beginDate));
 
   // Update the start date of the class to the first day where there is
   // actually a class (according to the MTWRF flags)
@@ -597,7 +599,7 @@ function VEventObject(timeBlocks) {
   var daysTillFirstClass = Math.min.apply(null, daysTillClasses);
   this.startDate.setDate(this.startDate.getDate() + daysTillFirstClass);
 
-  this.endDate = new Date(Date.parse(timeBlocks[0].course.data.endDate));
+  this.endDate = new Date(Date.parse(timeBlocks[0].sectionData.calendarSessions[0].beginDate));
   this.name = timeBlocks[0].course.name;
   this.loc = timeBlocks[0].loc;
   this.toString = function() {
@@ -646,10 +648,12 @@ function generateSchedules(courses) {
     return course.selected && course.times;
   }).map(function(course) {
     // Parse every line separately
-    return course.times.split('\n').map(function(timeSlot) {
+    return course.times.split('\n').map(function(timeSlot, index) {
 
       // Extract the section info from the string, if it's there.
       var section = timeSlot.indexOf(': ') > -1 ? timeSlot.split(': ')[0] : '';
+
+      var sectionData = course.data && course.data.courseSections? course.data.courseSections[index]: null;
 
       // Split it into a list of each day's time slot
       var args = [];
@@ -659,6 +663,7 @@ function generateSchedules(courses) {
           args.push({
             'course': course,
             'section': section,
+            'sectionData': sectionData,
             'loc': loc.trim(),
             'weekday': 'MTWRF'.indexOf(day),
             'from': timeToHours(+h1, +m1, (pm1 || pm2).toUpperCase() == 'PM'),
