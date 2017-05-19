@@ -599,7 +599,7 @@ function VEventObject(timeBlocks) {
   var daysTillFirstClass = Math.min.apply(null, daysTillClasses);
   this.startDate.setDate(this.startDate.getDate() + daysTillFirstClass);
 
-  this.endDate = new Date(Date.parse(timeBlocks[0].sectionData.calendarSessions[0].beginDate));
+  this.endDate = new Date(Date.parse(timeBlocks[0].sectionData.calendarSessions[0].endDate));
   this.name = timeBlocks[0].course.name;
   this.loc = timeBlocks[0].loc;
   this.toString = function() {
