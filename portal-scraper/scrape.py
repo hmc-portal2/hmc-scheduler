@@ -15,9 +15,10 @@ from tqdm import tqdm
 
 
 def main():
-    api_data = fetch_api_data()['data']
-    api_classes = {api_class['courseNumber']: api_class for api_class in api_data if 'courseNumber' in api_class}
+    #api_data = fetch_api_data()['data']
+    #api_classes = {api_class['courseNumber']: api_class for api_class in api_data if 'courseNumber' in api_class}
     classes_by_term, selected_term = fetch_all_portal_classes()
+    print(json.dumps({'classes_by_term': classes_by_term, 'selected_term': selected_term}))
 
 ENDPOINT = 'www.lingkapis.com'
 SERVICE = '/v1/harveymudd/coursecatalog/ps/datasets/coursecatalog'
@@ -56,9 +57,10 @@ def fetch_api_data():
 
         authorizationHeader = create_auth_header(KEY, SECRET, dateStr)
         res = get_HTTP_response(ENDPOINT, authorizationHeader, dateStr)
+        res_data = res.read()
 
         try:
-            json_data = json.loads(res.read())
+            json_data = json.loads(res_data)
             print('.', end='', flush=True, file=sys.stderr)
             return json_data
         except json.decoder.JSONDecodeError as e:
@@ -66,26 +68,36 @@ def fetch_api_data():
             json_err = e
             print('x', end='', flush=True, file=sys.stderr)
             continue
+    print('\nError: not JSON', file=sys.stderr)
+    print(res_data, file=sys.stderr)
     raise json_err
 
 def fetch_portal(term=None, update_pb=lambda: print('.', end='', flush=True, file=sys.stderr)):
-    with Browser('chrome', headless=True) as browser:
-        update_pb()
-        browser.visit('https://portal.hmc.edu/ICS/default.aspx?portlet=Course_Schedules&screen=Advanced+Course+Search')
-        update_pb()
-        if term is not None:
-            term_selector = browser.find_by_id('pg0_V_ddlTerm').first
-            selected_term = term_selector.find_by_css('[selected]').first.text
-            if term.replace(' ', '') != selected_term.replace(' ', ''):
-                term_selector.select_by_text(term)
-        update_pb()
-        browser.fill('pg0$V$txtCourseRestrictor', '*')
-        browser.click_link_by_id('pg0_V_btnSearch')
-        update_pb()
-        if len(browser.find_by_id('pg0_V_lnkShowAll')) > 0:
-            browser.click_link_by_id('pg0_V_lnkShowAll')
-        update_pb()
-        return browser.html
+    try:
+        with Browser('phantomjs') as browser:
+            return fetch_portal_with_browser(browser, term, update_pb)
+    except:
+        print('x', end='', flush=True, file=sys.stderr)
+        with Browser('chrome', headless=True) as browser:
+            return fetch_portal_with_browser(browser, term, update_pb)
+
+def fetch_portal_with_browser(browser, term, update_pb):
+    update_pb()
+    browser.visit('https://portal.hmc.edu/ICS/default.aspx?portlet=Course_Schedules&screen=Advanced+Course+Search')
+    update_pb()
+    if term is not None:
+        term_selector = browser.find_by_id('pg0_V_ddlTerm').first
+        selected_term = term_selector.find_by_css('[selected]').first.text
+        if term.replace(' ', '') != selected_term.replace(' ', ''):
+            term_selector.select_by_text(term)
+    update_pb()
+    browser.fill('pg0$V$txtCourseRestrictor', '*')
+    browser.click_link_by_id('pg0_V_btnSearch')
+    update_pb()
+    if len(browser.find_by_id('pg0_V_lnkShowAll')) > 0:
+        browser.click_link_by_id('pg0_V_lnkShowAll')
+    update_pb()
+    return browser.html
 
 def fetch_portal_with_term(term):
     return term, fetch_portal(term)
@@ -101,7 +113,7 @@ def fetch_all_portal_terms():
 
     portal_data = {}
 
-    pool = Pool(processes=min(len(terms), 12))
+    pool = Pool(processes=min(len(terms), 20))
     portal_data_list = pool.map(fetch_portal_with_term, terms)
 
     for term, data in portal_data_list:
@@ -184,11 +196,14 @@ def parse_section_id(section_id):
             break
     else:
         print('error: no match for ' + section_id, file=sys.stderr)
-        return {'id': section_id, 'section': 0}
+        return {'id': section_id, 'section': 0, 'campus': '??'}
     id_data = id_match.groupdict()
     id_data['section'] = int(id_data['section'])
     if 'number_only' in id_data:
         id_data['number_only'] = int(id_data['number_only'])
+    if 'campus' not in id_data:
+        print('error: missing campus for ' + section_id, file=sys.stderr)
+        id_data['campus'] = '??'
     return {'id': id_data['id'], 'campus': id_data['campus'], 'section': id_data['section'], 'id_data': id_data}
 
 def parse_class(class_row):
