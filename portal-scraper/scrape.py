@@ -17,15 +17,26 @@ from tqdm import tqdm
 def main():
     #api_data = fetch_api_data()['data']
     #api_classes = {api_class['courseNumber']: api_class for api_class in api_data if 'courseNumber' in api_class}
-    classes_by_term, selected_term = fetch_all_portal_classes()
-    print(json.dumps({'classes_by_term': classes_by_term, 'selected_term': selected_term}))
+    #classes_by_term, selected_term = fetch_all_portal_classes()
+    with open('api.json', 'rb') as api_data_file:
+        api_data = json.load(api_data_file)
+    with open('portal.json', 'rb') as portal_data_file:
+        portal_data = json.load(portal_data_file)
+    classes_by_term = portal_data['classes_by_term']
+    selected_term = portal_data['selected_term']
 
 ENDPOINT = 'www.lingkapis.com'
 SERVICE = '/v1/harveymudd/coursecatalog/ps/datasets/coursecatalog'
-KEY = os.environ['KEY']
-SECRET = os.environ['SECRET']
-MAX_RETRIES = 15
 QUERYSTRING = '?limit=1000000000'
+MAX_RETRIES = 15
+
+if 'KEY' in os.environ and 'SECRET' in os.environ:
+    KEY = os.environ['KEY']
+    SECRET = os.environ['SECRET']
+else:
+    print('KEY and SECRET not provided; API not available', file=sys.stderr)
+    KEY = ''
+    SECRET = ''
 
 def create_signature(secret, signingStr):
     '''Creates signature for a signing string'''
@@ -139,7 +150,7 @@ def parse_portal_table(portal_table):
                     'campus': class_data['campus'],
                     'name': class_data['name'],
                 }
-            classes[class_data['id']][class_data['section']] = class_data
+            classes[class_data['id']]['sections'][class_data['section']] = class_data
             if classes[class_data['id']]['name'] != class_data['name']:
                 print('err: name mismatch for {} - "{}" != "{}"'.format(
                         class_data['id'], classes[class_data['id']]['name'], class_data['name']), file=sys.stderr)
