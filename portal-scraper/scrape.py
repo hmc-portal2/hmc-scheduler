@@ -13,7 +13,6 @@ import urllib.parse
 from multiprocessing import Pool, Lock
 from tqdm import tqdm
 
-
 def main():
     #api_data = fetch_api_data()['data']
     #api_classes = {api_class['courseNumber']: api_class for api_class in api_data if 'courseNumber' in api_class}
@@ -22,8 +21,11 @@ def main():
         api_data = json.load(api_data_file)
     with open('portal.json', 'rb') as portal_data_file:
         portal_data = json.load(portal_data_file)
-    classes_by_term = portal_data['classes_by_term']
-    selected_term = portal_data['selected_term']
+    for course in api_data:
+        if 'courseNumber' not in course:
+            continue
+        if course['externalId'].strip() != course['courseNumber'].strip():
+            print('{!r} != {!r}'.format(course['externalId'], course['courseNumber']))
 
 ENDPOINT = 'www.lingkapis.com'
 SERVICE = '/v1/harveymudd/coursecatalog/ps/datasets/coursecatalog'
@@ -137,23 +139,38 @@ def get_portal_table(portal_html):
     print('.', end='', flush=True, file=sys.stderr)
     return soup.select('#pg0_V_dgCourses > tbody.gbody > tr')
 
+def merge(a, b, path=None):
+    "recursively merges two dicts, b into a"
+    if path is None: path = []
+    for key in b:
+        if key in a:
+            if isinstance(a[key], dict) and isinstance(b[key], dict):
+                merge(a[key], b[key], path + [str(key)])
+            elif a[key] == b[key]:
+                pass # same leaf value
+            else:
+                raise Exception('Conflict at %s' % '.'.join(path + [str(key)]))
+        else:
+            a[key] = b[key]
+    return a
+
 def parse_portal_table(portal_table):
     classes = {}
 
     for row in portal_table:
         if (not row.has_attr('class')) or ('subItem' not in row['class']):
-            class_data = parse_class(row)
+            section_data = parse_section(row)
+            class_data = {
+                'sections': {
+                    section_data['section']: section_data,
+                },
+                'id': section_data['id'],
+                'campus': section_data['campus'],
+                'name': section_data['name'],
+            }
             if class_data['id'] not in classes:
-                classes[class_data['id']] = {
-                    'sections': {},
-                    'id': class_data['id'],
-                    'campus': class_data['campus'],
-                    'name': class_data['name'],
-                }
-            classes[class_data['id']]['sections'][class_data['section']] = class_data
-            if classes[class_data['id']]['name'] != class_data['name']:
-                print('err: name mismatch for {} - "{}" != "{}"'.format(
-                        class_data['id'], classes[class_data['id']]['name'], class_data['name']), file=sys.stderr)
+                classes[class_data['id']] = {}
+            merge(classes[class_data['id']], class_data)
 
     return classes
 
@@ -217,7 +234,7 @@ def parse_section_id(section_id):
         id_data['campus'] = '??'
     return {'id': id_data['id'], 'campus': id_data['campus'], 'section': id_data['section'], 'id_data': id_data}
 
-def parse_class(class_row):
+def parse_section(class_row):
     columns = list(class_row.find_all('td', recursive=False))
     class_data = {}
     
@@ -233,7 +250,7 @@ def parse_class(class_row):
     class_data['credits'] = float(columns[7].string)
     class_data['startDate'] = reformat_date(str(columns[8].string))
     class_data['endDate'] = reformat_date(str(columns[9].string))
-    class_data['schedule'] = parse_schedule(class_data['scheduleStrings'])
+    class_data['schedule'] = parse_schedule(class_data['scheduleStrings'], class_data['startDate'], class_data['endDate'])
 
     return class_data
 
@@ -241,20 +258,68 @@ def to_list(cell):
     return [str(child.string).strip() for child in cell.ul.find_all('li', recursive=False)]
 
 SCHEDULE_RE = re.compile(r'''
-    (MTWRFSU)
-    \u00a0
-    ([0-9]{2}:[0-9]{2})
+    ^
+    (?:
+        (?P<days> U?M?T?W?R?F?S?)
+        \u00a0
+    )?
+    (?P<start> [0-9]{1,2}:[0-9]{2})
+    (?P<start_ampm> [AP]M)?
     \ -\ 
-    ([0-9]{2}:[0-9]{2})
+    (?P<end> [0-9]{1,2}:[0-9]{2})
     \ 
-    ([AP]M)
+    (?P<end_ampm> [AP]M)
+    ;\ 
+    (?P<campus> [A-Z]{2,3})?
+    \ *Campus
+    (?:
+        ,\ *
+        (?P<building> [a-zA-Z0-9.'/ -]+)
+        (?:
+            ,\ 
+            (?P<room> [A-Z0-9]+)
+        )?
+    )?
+    (?:
+        ,?\ +\(
+        (?P<start_date>
+            [0-9]{1,2}/[0-9]{1,2}/[0-9]{4}
+        )
+        -
+        (?P<end_date>
+            [0-9]{1,2}/[0-9]{1,2}/[0-9]{4}
+        )
+        \)
+    )?
+    $
 ''', re.VERBOSE)
-def parse_schedule(schedule_strings):
-    return {}
+def parse_schedule(schedule_strings, start_date, end_date):
+    schedule = []
+    for timestr in schedule_strings:
+        m = SCHEDULE_RE.match(timestr)
+        if not m:
+            print('unmatched schedule string: {}'.format(timestr), file=sys.stderr)
+        schedule_part = m.groupdict()
+        if schedule_part['start_ampm'] is None:
+            schedule_part['start_ampm'] = schedule_part['end_ampm']
+        if schedule_part['days'] is None:
+            if schedule_part['start'] == '0:00' and ((schedule_part['end'] == '0:00' and schedule_part['end_ampm'] == 'AM') or
+                                                     (schedule_part['end'] == '12:00' and schedule_part['end_ampm'] == 'PM')):
+                continue
+            else:
+                schedule_part['days'] = ''
+        if schedule_part['start_date'] is None:
+            schedule_part['start_date'] = start_date
+            schedule_part['end_date'] = end_date
+        else:
+            schedule_part['start_date'] = reformat_date(schedule_part['start_date'])
+            schedule_part['end_date'] = reformat_date(schedule_part['end_date'])
+        schedule.append(schedule_part)
+    return schedule
 
-DATE_RE = re.compile('^(?P<month>\d{2})/(?P<day>\d{2})/(?P<year>\d{4})$')
+DATE_RE = re.compile('^(?P<month>\d{1,2})/(?P<day>\d{1,2})/(?P<year>\d{4})$')
 def reformat_date(date_str):
-    return '{year}-{month}-{day}'.format(**DATE_RE.match(date_str).groupdict())
+    return '{year}-{month:0>2}-{day:0>2}'.format(**DATE_RE.match(date_str).groupdict())
 
 if __name__ == '__main__':
     main()
