@@ -2,4 +2,6 @@ courses.json
 courses.jsonp
 *swp
 *~
-*/.env
+**/.env
+data/
+ghostdriver.log
