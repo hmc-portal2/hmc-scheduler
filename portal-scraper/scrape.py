@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from splinter import Browser
 from bs4 import BeautifulSoup
 import json
@@ -12,20 +14,157 @@ import base64
 import urllib.parse
 from multiprocessing import Pool, Lock
 from tqdm import tqdm
+import argparse
+
+def test_data():
+    classes_by_term, selected_term = fetch_all_portal_classes()
+    for term in sorted(classes_by_term.keys() & api_classes_by_term.keys()):
+        if term not in api_classes_by_term:
+            print('warning: term missing from API:', term, file=sys.stderr)
+        elif term not in classes_by_term:
+            print('warning: term missing from portal:', term, file=sys.stderr)
+        else:
+            if len(classes_by_term[term].keys() - api_classes_by_term[term].keys()) > 0:
+                print('classes in {} for portal but not for api: {}'.format(
+                        term, sorted(classes_by_term[term].keys() - api_classes_by_term[term].keys()), file=sys.stderr))
+            if len(api_classes_by_term[term].keys() - classes_by_term[term].keys()) > 0:
+                print('classes in {} for api but not for portal: {}'.format(
+                        term, sorted(api_classes_by_term[term].keys() - classes_by_term[term].keys()), file=sys.stderr))
+    merge(classes_by_term, api_classes_by_term)
 
 def main():
-    #api_data = fetch_api_data()['data']
-    #api_classes = {api_class['courseNumber']: api_class for api_class in api_data if 'courseNumber' in api_class}
-    #classes_by_term, selected_term = fetch_all_portal_classes()
-    with open('api.json', 'rb') as api_data_file:
-        api_data = json.load(api_data_file)
-    with open('portal.json', 'rb') as portal_data_file:
-        portal_data = json.load(portal_data_file)
-    for course in api_data:
-        if 'courseNumber' not in course:
-            continue
-        if course['externalId'].strip() != course['courseNumber'].strip():
-            print('{!r} != {!r}'.format(course['externalId'], course['courseNumber']))
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--directory', '-d', default='.', action='store')
+    which_data = parser.add_mutually_exclusive_group()
+    which_data.add_argument('--all', '-a', action='store_true')
+    which_data.add_argument('--api-classes', '-p', action='store_true')
+    parser.add_argument('--no-save', '-e', action='store_true')
+    args = parser.parse_args()
+    api_data = fetch_api_data()['data']
+    api_classes_by_term = format_api_data_as_portal_data(api_data)
+    selected_term, all_terms = fetch_portal_terms_info()
+    api_extra_terms = list(api_classes_by_term.keys() - set(all_terms))
+    if args.all:
+        terms_to_fetch = all_terms
+    elif args.api_classes:
+        terms_to_fetch = [term for term in all_terms if term in api_classes_by_term]
+    else:
+        terms_to_fetch = all_terms[:all_terms.index(selected_term)+1]
+    classes_by_term = fetch_some_portal_classes(terms_to_fetch)
+    merge(classes_by_term, api_classes_by_term)
+    if not args.no_save:
+        os.makedirs(args.directory, exist_ok=True)
+        with open(os.path.join(args.directory, 'main.json'), 'w') as f:
+            json.dump({'terms': all_terms, 'selected': selected_term, 'selected_data': classes_by_term[selected_term]},
+                      f, separators=(',',':'))
+        for term in terms_to_fetch + api_extra_terms:
+            with open(os.path.join(args.directory, term+'.json'), 'w') as f:
+                json.dump(classes_by_term[term], f, separators=(',',':'))
+
+def format_api_data_as_portal_data(api_data):
+    api_classes = {api_class['courseNumber']: api_class for api_class in api_data if 'courseNumber' in api_class}
+    api_classes_by_term = {}
+    for api_class in api_data:
+        merge(api_classes_by_term, api_class_to_portal_classes(api_class))
+    return api_classes_by_term
+
+API_TERM_RE = re.compile(r'^(?P<season>FA|SP|SU)(?P<year>[0-9]{4})(?P<part>[FP][12])?$')
+def api_term_to_portal_terms(api_term):
+    m = API_TERM_RE.match(api_term)
+    if not m:
+        print('bad api designator: {}'.format(api_term), file=sys.stderr)
+        return api_term
+    return {m.expand('\g<season> \g<part> \g<year>'), m.expand('\g<season>  \g<year>')}
+
+def api_class_to_portal_classes(course):
+    portal_data = {}
+    if 'courseNumber' not in course:
+        # fake course; ignore
+        return {}
+    if course['externalId'].startswith('\n"'):
+        course['externalId'] = course['externalId'][2:]
+    for section in course['courseSections']:
+        if 'calendarSessions' not in section:
+           # some scripps courses don't say what semester they are
+           # we'll just ignore them
+           continue
+        for semester in section['calendarSessions']:
+            portal_terms = api_term_to_portal_terms(semester['externalId'])
+            for portal_term in portal_terms:
+                if not portal_term in portal_data:
+                    portal_data[portal_term] = {course['externalId']: {}}
+                merge(portal_data[portal_term][course['externalId']],
+                      api_semester_session_to_portal_class(course, section, semester))
+    return portal_data
+
+def api_semester_session_to_portal_class(course, section, semester):
+    if not section['externalId'].endswith(semester['externalId']):
+        print('invalid section id: {!r}; should end in {!r}'.format(
+              section['externalId'], semester['externalId'], file=sys.stderr))
+    if not 'courseSectionSchedule' in section:
+        # these sections should not be returned by the API anyways...
+        #print('Warning: section missing schedule: {}'.format(section['externalId']), file=sys.stderr)
+        return {}
+    section_id = section['externalId'][:-len(' '+semester['externalId'])]
+    section_data = parse_section_id(section_id)
+    section_data['section_id'] = section_id
+    #section_data['name'] = course['courseTitle']
+    if 'sectionInstructor' in section:
+        section_data['instructors'] = api_instructor_names(section['sectionInstructor'])
+    else:
+        section_data['instructors'] = []
+    if 'capacity' in section:
+        section_data['capacity'] = section['capacity']
+    if 'currentEnrollment' in section:
+        section_data['currentEnrollment'] = section['currentEnrollment']
+    section_data['startDate'] = semester['beginDate']
+    section_data['endDate'] = semester['endDate']
+    section_data['schedule'] = [parse_api_schedule(schedulePart)
+                                for schedulePart in section['courseSectionSchedule']
+                                if schedulePart['ClassMeetingDays'] != '-------']
+    class_data = {
+        'sections': {
+            section_data['section']: section_data,
+        },
+        'id': section_data['id'],
+        'campus': section_data['campus'],
+        'name': course['courseTitle'],
+    }
+    
+    if 'description' in course:
+        class_data['description'] = course['description']
+    
+    return class_data
+
+def api_instructor_names(api_instructors):
+    instructors = []
+    for instructor in api_instructors:
+        if 'firstName' in instructor:
+            if 'lastName' in instructor:
+                instructors.append(instructor['lastName'] + ', ' + instructor['firstName'])
+            else:
+                instructors.append(instructor['firstName'])
+        else:
+            if 'lastName' in instructor:
+                instructors.append(instructor['lastName'])
+    return instructors
+
+def parse_api_schedule(schedule_part):
+    return {
+        'days': schedule_part['ClassMeetingDays'].replace('-',''),
+        'start_time': reformat_api_time(schedule_part['ClassBeginningTime']),
+        'end_time': reformat_api_time(schedule_part['ClassEndingTime']),
+        'site': schedule_part['InstructionSiteName'].strip(),
+        # what about the start and end dates?
+    }
+
+def reformat_api_time(api_time):
+    if api_time == '0':
+        return None
+    minutes = int(api_time[-2:])
+    hours = int(api_time[:-2])
+    time_obj = datetime.time(hour=hours, minute=minutes)
+    return time_obj.isoformat()
 
 ENDPOINT = 'www.lingkapis.com'
 SERVICE = '/v1/harveymudd/coursecatalog/ps/datasets/coursecatalog'
@@ -115,7 +254,7 @@ def fetch_portal_with_browser(browser, term, update_pb):
 def fetch_portal_with_term(term):
     return term, fetch_portal(term)
 
-def fetch_all_portal_terms():
+def fetch_portal_terms_info():
     with Browser('phantomjs') as browser:
         print('.', end='', flush=True, file=sys.stderr)
         browser.visit('https://portal.hmc.edu/ICS/default.aspx?portlet=Course_Schedules&screen=Advanced+Course+Search')
@@ -124,20 +263,73 @@ def fetch_all_portal_terms():
         terms = [element.text for element in term_selector.find_by_tag('option')]
         selected_term = term_selector.find_by_css('[selected]').first.text
 
+    return selected_term, terms
+
+def fetch_all_portal_terms():
+    selected_term, terms = fetch_portal_terms_info()
+    portal_data = fetch_portal_terms(terms)
+    return selected_term, portal_data
+
+def fetch_portal_terms(terms):
     portal_data = {}
 
-    pool = Pool(processes=min(len(terms), 20))
+    pool = Pool(processes=min(len(terms), 10))
     portal_data_list = pool.map(fetch_portal_with_term, terms)
 
     for term, data in portal_data_list:
         portal_data[term] = data
 
-    return portal_data, selected_term
+    return portal_data
 
 def get_portal_table(portal_html):
     soup = BeautifulSoup(portal_html, 'lxml')
     print('.', end='', flush=True, file=sys.stderr)
     return soup.select('#pg0_V_dgCourses > tbody.gbody > tr')
+
+def can_merge(a, b, allow_substring=False):
+    if isinstance(a, dict) and isinstance(b, dict):
+        for key in b:
+            if key in a:
+                if not can_merge(a[key], b[key]):
+                    return False
+        return True
+    elif allow_substring and isinstance(a, str) and isinstance(b, str):
+        return a.startswith(b)
+    else:
+        return a == b
+
+def merge_unordered_lists(a, b, allow_substring=False):
+    if a == b:
+        return True
+    if len(a) != len(b):
+        return False
+    merge_map = []
+    for a_itm in a:
+        merge_map.append([i for i, b_itm in enumerate(b) if a_itm == b_itm])
+        if len(merge_map[-1]) == 0:
+            merge_map[-1] = [i for i, b_itm in enumerate(b) if not b_itm in a and can_merge(a_itm, b_itm, allow_substring)]
+    idx_set = set()
+    idx_list = [0]*len(a)
+    a_i = 0
+    if not get_merge_order(a_i, idx_list, idx_set, merge_map):
+        return False
+    for a_i, b_i in enumerate(idx_list):
+        if isinstance(a[a_i], dict) and isinstance(b[b_i], dict):
+            merge(a[a_i], b[b_i])
+    return True
+
+def get_merge_order(a_i, idx_list, idx_set, merge_map):
+    if a_i == len(idx_list):
+        return True
+    for b_i in merge_map[a_i]:
+        if b_i in idx_set:
+            continue
+        idx_set.add(b_i)
+        idx_list[a_i] = b_i
+        if get_merge_order(a_i + 1, idx_list, idx_set, merge_map):
+            return True
+        idx_set.remove(b_i)
+    return False
 
 def merge(a, b, path=None):
     "recursively merges two dicts, b into a"
@@ -146,10 +338,15 @@ def merge(a, b, path=None):
         if key in a:
             if isinstance(a[key], dict) and isinstance(b[key], dict):
                 merge(a[key], b[key], path + [str(key)])
-            elif a[key] == b[key]:
-                pass # same leaf value
-            else:
-                raise Exception('Conflict at %s' % '.'.join(path + [str(key)]))
+                continue
+            if a[key] == b[key]:
+                continue # same leaf value
+            if isinstance(a[key], list) and isinstance(b[key], list):
+                # merge scheduleparts lists by merging components
+                if merge_unordered_lists(a[key], b[key], key == 'instructors'):
+                    continue
+            print('Error: conflict at {}: {!r} != {!r}'.format(
+                        '/'.join(path + [str(key)]), a[key], b[key]), file=sys.stderr)
         else:
             a[key] = b[key]
     return a
@@ -160,6 +357,12 @@ def parse_portal_table(portal_table):
     for row in portal_table:
         if (not row.has_attr('class')) or ('subItem' not in row['class']):
             section_data = parse_section(row)
+            if section_data['id'] in classes and section_data['section'] in classes[class_data['id']]['sections']:
+                print('Error: duplicated section {} for {}'.format(section_data['section'], class_data['id']), file=sys.stderr)
+                i = 1
+                while '{}.{}'.format(section_data['section'], i) in classes[class_data['id']]['sections']:
+                    i += 1
+                section_data['section'] = '{}.{}'.format(section_data['section'], i)
             class_data = {
                 'sections': {
                     section_data['section']: section_data,
@@ -169,7 +372,7 @@ def parse_portal_table(portal_table):
                 'name': section_data['name'],
             }
             if class_data['id'] not in classes:
-                classes[class_data['id']] = {}
+                classes[class_data['id']] = {'sections': {}}
             merge(classes[class_data['id']], class_data)
 
     return classes
@@ -181,6 +384,15 @@ def fetch_all_portal_classes():
         classes_by_term[term] = parse_portal_table(get_portal_table(portal_terms[term]))
 
     return classes_by_term, selected_term
+
+def fetch_some_portal_classes(terms):
+    portal_terms = fetch_portal_terms(terms)
+    classes_by_term = {}
+    for term in portal_terms:
+        print(term)
+        classes_by_term[term] = parse_portal_table(get_portal_table(portal_terms[term]))
+
+    return classes_by_term
 
 def fetch_portal_classes():
     return parse_portal_table(get_portal_table(fetch_portal()))
@@ -308,6 +520,13 @@ def parse_schedule(schedule_strings, start_date, end_date):
                 continue
             else:
                 schedule_part['days'] = ''
+        if schedule_part['start'] == '0:00' and ((schedule_part['end'] == '0:00' and schedule_part['end_ampm'] == 'AM') or
+                                                     (schedule_part['end'] == '12:00' and schedule_part['end_ampm'] == 'PM')):
+            schedule_part['start_time'] = None
+            schedule_part['end_time'] = None
+        else:
+            schedule_part['start_time'] = reformat_time(schedule_part['start'], schedule_part['start_ampm'])
+            schedule_part['end_time'] = reformat_time(schedule_part['end'], schedule_part['end_ampm'])
         if schedule_part['start_date'] is None:
             schedule_part['start_date'] = start_date
             schedule_part['end_date'] = end_date
@@ -316,6 +535,12 @@ def parse_schedule(schedule_strings, start_date, end_date):
             schedule_part['end_date'] = reformat_date(schedule_part['end_date'])
         schedule.append(schedule_part)
     return schedule
+
+AMPM_MAP = {'AM': 0, 'PM': 12}
+def reformat_time(time_str, time_ampm):
+    hour_str, minute_str = tuple(time_str.split(':'))
+    time_obj = datetime.time(hour=(int(hour_str) % 12) + AMPM_MAP[time_ampm], minute=int(minute_str))
+    return time_obj.isoformat()
 
 DATE_RE = re.compile('^(?P<month>\d{1,2})/(?P<day>\d{1,2})/(?P<year>\d{4})$')
 def reformat_date(date_str):
