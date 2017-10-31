@@ -146,7 +146,7 @@ function updateSearch() {
       fetch('/data/' + term + '.json').then(function(response){
         return response.json();
       }).then(function(json) {
-        globalCourseSearch[term] = json
+        globalCourseData[term] = json
       }).then(updateSearch);
       return
     } else if(globalCourseData[globalTerm] == null) {
@@ -1324,12 +1324,16 @@ function showResult(courseIndex) {
     var timeslot = '';
     var isFirstTime = true;
     // TODO: use schedules, not scheduleStrings
-    for (var schedule of section['scheduleStrings']) {
+    for (var schedule of section['schedule']) {
       if (!isFirstTime) {
         timeslot += ', ';
       }
       isFirstTime = false;
-      timeslot += schedule.split(';')[0]
+      timeslot += schedule['days']
+      timeslot += ': '
+      timeslot += schedule['start_time']
+      timeslot += ' - '
+      timeslot += schedule['end_time']
     }
     timeslots += timeslot;
     isfirsttimeslot = false;
@@ -1459,7 +1463,7 @@ function expandOrCollapse(row) {
   $(newRow).insertAfter(row);
   row.className += "open";
   //todo:take out
-  tempCourse = getCoursesFromAttributeRegex(filterCoursesByCalendar(globalCourseData, "designator", "SP2018"), 'courseNumber', /.*070.*/)[0];
+  //tempCourse = getCoursesFromAttributeRegex(filterCoursesByCalendar(globalCourseData, "designator", "SP2018"), 'courseNumber', /.*070.*/)[0];
   addExpandedData(row.getAttribute('courseindex'));
 }
 
@@ -1507,13 +1511,13 @@ var sections = [];
 function addExpandedData(index) {
   var courseObj = globalCourseSearch[index];
   var title = "";
-  if (courseObj['courseTitle']) {
-    title = courseObj['courseTitle'];
+  if (courseObj['name']) {
+    title = courseObj['name'];
   }
 
   var code = "";
-  if (courseObj['courseNumber']) {
-    code = courseObj['courseNumber']
+  if (courseObj['id']) {
+    code = courseObj['id']
   }
 
   var dept = "";
@@ -1544,10 +1548,7 @@ function addExpandedData(index) {
 
   //Loop through section-specific info
   var index = 1;
-  jQuery.each(courseObj['courseSections'], function() {
-
-
-
+  jQuery.each(courseObj['sections'], function() {
     var prof = "";
     if (this['sectionInstructor']) {
       var instructordata = this['sectionInstructor'];
