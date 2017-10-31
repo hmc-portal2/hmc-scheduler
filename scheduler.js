@@ -1,16 +1,27 @@
-var globalCourseData = [];
+var globalCourseData = {};
 var globalCourseSearch = [];
 var globalCourses;
 var globalFavCourses;
 var globalTerm;
 var globalShowMoreIndex;
 
-function lingkCallback(json) {
-  globalCourseData = json['data'];
-  getAllDepartments();
-  addExtraAttributes();
+fetch('/data/main.json').then(function(response){
+  return response.json();
+}).then(function(json) {
+  globalTerm = json['selected'];
+  globalCourseData[globalTerm] = json['selected_data'];
+  createDropdownBlock("Course Term:", "course-terms", globalTerm);
+  var terms = json['terms']; // TODO: implement all
+  createDropdown("#course-terms", terms);
+  $(".dropdown-menu li a").click(function() {
+    $(this).parents(".dropdown").find(".btn").html($(this).text() + getCaret());
+    $(this).parents(".dropdown").find(".btn").attr('realVal', $(this).text());
+    updateSearch();
+  })
+  //getAllDepartments();
+  //addExtraAttributes();
   updateSearch();
-}
+})
 
 
 
@@ -128,13 +139,26 @@ function updateSearch() {
   }
   if (globalTerm == 'All') {
     globalTerm = "";
+  } else {
+    if(!(globalTerm in globalCourseData)) {
+      globalCourseData[globalTerm] = null;
+      term = globalTerm
+      fetch('/data/' + term + '.json').then(function(response){
+        return response.json();
+      }).then(function(json) {
+        globalCourseSearch[term] = json
+      }).then(updateSearch);
+      return
+    } else if(globalCourseData[globalTerm] == null) {
+      return
+    }
   }
   var code = document.getElementById("course-code").value;
   var title = document.getElementById("course-title").value;
   var useTitleRegex = document.getElementById("title-regex").checked;
   var useCodeRegex = document.getElementById("code-regex").checked;
-  var instructor = document.getElementById("instructor").value;
-  var useInstructorRegex = document.getElementById("prof-regex").checked;
+  //var instructor = document.getElementById("instructor").value;
+  //var useInstructorRegex = document.getElementById("prof-regex").checked;
   var campus = $("#campus_btn").attr('realVal') || false;
   var filled = document.getElementById("filled-regex").checked;
   var department = $("#department_btn").attr('realVal') || false;
@@ -149,12 +173,15 @@ function updateSearch() {
   // Implement title, code, and instructor regex
   var titleRe = implementRegex(useTitleRegex, title);
   var codeRe = implementRegex(useCodeRegex, code);
-  var instructorRe = implementRegex(useInstructorRegex, instructor);
+  //var instructorRe = implementRegex(useInstructorRegex, instructor);
 
-
-  validCourses = getCoursesFromAttributeRegex(globalCourseData, "courseNumber", codeRe);
-  validCourses = getCoursesFromAttributeRegex(validCourses, "courseTitle", titleRe);
-  validCourses = getInstructorRegex(validCourses, instructorRe);
+  validCourses = []
+  for(var id in globalCourseData[globalTerm]) {
+    validCourses.push(globalCourseData[globalTerm][id])
+  }
+  validCourses = getCoursesFromAttributeRegex(validCourses, "name", titleRe);
+  validCourses = getCoursesFromAttributeRegex(validCourses, "id", codeRe);
+  //validCourses = getInstructorRegex(validCourses, instructorRe);
   if (campus != false) {
     validCourses = getCoursesFromAttribute(validCourses, "campus", campus);
   }
@@ -165,9 +192,9 @@ function updateSearch() {
     validCourses = getCoursesFromDept(validCourses, department);
   }
 
-  if (globalTerm != "") {
-    validCourses = filterCoursesByCalendar(validCourses, "designator", globalTerm);
-  }
+//   if (globalTerm != "") {
+//     validCourses = filterCoursesByCalendar(validCourses, "designator", globalTerm);
+//   }
   globalCourseSearch = validCourses;
   repopulateChart();
 }
@@ -1130,13 +1157,13 @@ function attributeFilter(response, attribute, expected, mustBe) {
 
 
 
-(function getCourseTerms() {
-  //TODO: Call some function to have portal tell us which semesters are available
-  //PLACEHOLDER:
-  createDropdownBlock("Course Term:", "course-terms", "SP2018");
-  var terms = ["All", "SP2018", "FA2017", "SP2017", "FA2016", "SP2016"];
-  createDropdown("#course-terms", terms);
-}());
+// (function getCourseTerms() {
+//   //TODO: Call some function to have portal tell us which semesters are available
+//   //PLACEHOLDER:
+//   createDropdownBlock("Course Term:", "course-terms", "SP2018");
+//   var terms = ["All", "SP2018", "FA2017", "SP2017", "FA2016", "SP2016"];
+//   createDropdown("#course-terms", terms);
+// }());
 
 
 (function getCampuses() {
@@ -1270,48 +1297,39 @@ function showResult(courseIndex) {
     courseIndex: courseIndex
   });
   row.append($("<td>", {
-    text: courseObj['courseNumber'] || 'NO SECTION'
+    text: courseObj['id'] || 'NO SECTION'
   }));
   row.append($("<td>", {
-    text: courseObj['courseTitle'] || 'No title'
+    text: courseObj['name'] || 'No title'
   }));
   var instructors = '';
-  for (var section of courseObj['courseSections'])
-    for (var instructordata of section['sectionInstructor']) {
-      if (instructordata['lastName']) {
-        if (instructors.length > 0) instructors += ', ';
-        instructors += instructordata['lastName']
-      } else if (instructordata['firstName']) {
-        if (instructors.length > 0) instructors += ', ';
-        instructors += instructordata['firstName']
-      }
+  for (var sectionId in courseObj['sections']) {
+    section = courseObj['sections'][sectionId];
+    for (var instructordata of section['instructors']) {
+      if (instructors.length > 0) instructors += '; ';
+      instructors += instructordata
     }
+  }
   row.append($("<td>", {
     text: instructors
   }));
   var timeslots = '';
   var isfirsttimeslot = true;
   var courseJson = courseObj;
-  for (var section of courseJson['courseSections']) {
+  for (var sectionId in courseObj['sections']) {
+    section = courseObj['sections'][sectionId];
     if (!isfirsttimeslot) {
       timeslots += '; ';
     }
     var timeslot = '';
     var isFirstTime = true;
-    if(!section['courseSectionSchedule']) {
-      //TODO: why? console.log(courseJson, section);
-      continue;
-    }
-    for (var schedule of section['courseSectionSchedule']) {
+    // TODO: use schedules, not scheduleStrings
+    for (var schedule of section['scheduleStrings']) {
       if (!isFirstTime) {
         timeslot += ', ';
       }
       isFirstTime = false;
-      timeslot += schedule['ClassMeetingDays'].replace(/-/g, '');
-      timeslot += '\u00a0';
-      timeslot += toAmPmTime(schedule['ClassBeginningTime']);
-      timeslot += '-';
-      timeslot += toAmPmTime(schedule['ClassEndingTime']);
+      timeslot += schedule.split(';')[0]
     }
     timeslots += timeslot;
     isfirsttimeslot = false;
@@ -1325,7 +1343,7 @@ function showResult(courseIndex) {
   var crCell = $("<td>")
   crCell.append($("<a>", {
     text: "Claremontreview",
-    href: "http://claremontreview.com/courses/" + courseObj['courseNumber'].replace(/(\s)+/g, '_'),
+    href: "http://claremontreview.com/courses/" + courseObj['id'].replace(/(\s)+/g, '_'),
     target: "blank",
     style: "text-decoration:underline; color:0x4444cc;"
   }));
