@@ -13,8 +13,8 @@ import hmac
 import base64
 import urllib.parse
 from multiprocessing import Pool, Lock
-from tqdm import tqdm
 import argparse
+import requests
 
 def test_data():
     classes_by_term, selected_term = fetch_all_portal_classes()
@@ -196,11 +196,8 @@ def create_auth_header(keyId, secret, dateStr):
 
 def get_HTTP_response(endPoint, authorizationHeader, dateStr):
     '''Connects to an endpoint via HTTPS and retrieves response'''
-    connection = http.client.HTTPSConnection(endPoint)
     headers = {'Date': dateStr, 'Authorization': authorizationHeader}
-    connection.request('GET', SERVICE + QUERYSTRING, headers=headers)
-    response = connection.getresponse()
-    return response
+    return requests.get('https://' + endPoint + SERVICE + QUERYSTRING, headers=headers)
 
 def fetch_api_data():
     json_err = None
@@ -209,10 +206,9 @@ def fetch_api_data():
 
         authorizationHeader = create_auth_header(KEY, SECRET, dateStr)
         res = get_HTTP_response(ENDPOINT, authorizationHeader, dateStr)
-        res_data = res.read()
 
         try:
-            json_data = json.loads(res_data)
+            json_data = res.json()
             print('.', end='', flush=True, file=sys.stderr)
             return json_data
         except json.decoder.JSONDecodeError as e:
@@ -221,7 +217,7 @@ def fetch_api_data():
             print('x', end='', flush=True, file=sys.stderr)
             continue
     print('\nError: not JSON', file=sys.stderr)
-    print(res_data, file=sys.stderr)
+    print(res.content, file=sys.stderr)
     raise json_err
 
 def fetch_portal(term=None, update_pb=lambda: print('.', end='', flush=True, file=sys.stderr)):
