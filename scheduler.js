@@ -1133,8 +1133,8 @@ function attributeFilter(response, attribute, expected, mustBe) {
 (function getCourseTerms() {
   //TODO: Call some function to have portal tell us which semesters are available
   //PLACEHOLDER:
-  createDropdownBlock("Course Term:", "course-terms", "FA2017");
-  var terms = ["All", "FA2017", "SP2017", "FA2016", "SP2016"];
+  createDropdownBlock("Course Term:", "course-terms", "SP2018");
+  var terms = ["All", "SP2018", "FA2017", "SP2017", "FA2016", "SP2016"];
   createDropdown("#course-terms", terms);
 }());
 
@@ -1441,7 +1441,7 @@ function expandOrCollapse(row) {
   $(newRow).insertAfter(row);
   row.className += "open";
   //todo:take out
-  tempCourse = getCoursesFromAttributeRegex(filterCoursesByCalendar(globalCourseData, "designator", "FA2017"), 'courseNumber', /.*070.*/)[0];
+  tempCourse = getCoursesFromAttributeRegex(filterCoursesByCalendar(globalCourseData, "designator", "SP2018"), 'courseNumber', /.*070.*/)[0];
   addExpandedData(row.getAttribute('courseindex'));
 }
 
