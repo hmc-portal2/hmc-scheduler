@@ -55,7 +55,7 @@ def main():
     if not args.no_save:
         os.makedirs(args.directory, exist_ok=True)
         with open(os.path.join(args.directory, 'main.json'), 'w') as f:
-            json.dump({'terms': all_terms, 'selected': selected_term, 'selected_data': classes_by_term[selected_term]},
+            json.dump({'terms': all_terms + api_extra_terms, 'selected': selected_term, 'selected_data': classes_by_term[selected_term]},
                       f, separators=(',',':'))
         for term in terms_to_fetch + api_extra_terms:
             with open(os.path.join(args.directory, term+'.json'), 'w') as f:
