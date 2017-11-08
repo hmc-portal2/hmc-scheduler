@@ -248,7 +248,7 @@ function toCourseObject(courseJson) {
       instructorName = 'Unknown';
     }
     var timeslot = '';
-    timeslot += section['id'];
+    timeslot += section['section_id'];
     timeslot += ' (';
     timeslot += instructorName;
     timeslot += '): ';
