@@ -232,44 +232,39 @@ function toAmPmTime(timestring) {
 }
 
 function toCourseObject(courseJson) {
-  var courseName = courseJson['courseTitle'];
+  var courseName = courseJson['name'];
   var timeslots = '';
   var isfirsttimeslot = true;
-  for (var section of courseJson['courseSections']) {
+  for (var sectionId in courseJson['sections']) {
+    section = courseJson['sections'][sectionId]
     if (!isfirsttimeslot) {
       timeslots += '\n';
     }
     var instructorName = '';
-    if (section['sectionInstructor'] && section['sectionInstructor'].length > 0) {
-      var instructor = section['sectionInstructor'][0];
-      if (instructor['lastName']) {
-        instructorName = instructor['lastName'];
-      } else if (instructor['firstName']) {
-        instructorName = instructor['firstName'];
-      } else {
-        instructorName = 'Unknown';
-      }
+    if (section['instructors'] && section['instructors'].length > 0) {
+      var instructor = section['instructors'][0];
+      instructorName = instructor.split(',')[0];
     } else {
       instructorName = 'Unknown';
     }
     var timeslot = '';
-    timeslot += section['externalId'];
+    timeslot += section['id'];
     timeslot += ' (';
     timeslot += instructorName;
     timeslot += '): ';
     var isFirstTime = true;
-    for (var schedule of section['courseSectionSchedule']) {
+    for (var schedule of section['schedule']) {
       if (!isFirstTime) {
         timeslot += ', ';
       }
       isFirstTime = false;
-      timeslot += schedule['ClassMeetingDays'].replace(/-/g, '');
+      timeslot += schedule['days'];
       timeslot += ' ';
-      timeslot += toAmPmTime(schedule['ClassBeginningTime']);
+      timeslot += schedule['start'] + schedule['start_ampm'];
       timeslot += '-';
-      timeslot += toAmPmTime(schedule['ClassEndingTime']);
+      timeslot += schedule['end'] + schedule['end_ampm'];
       timeslot += '; ';
-      timeslot += schedule['InstructionSiteName'];
+      timeslot += schedule['site'];
     }
     timeslots += timeslot;
     isfirsttimeslot = false;
@@ -361,28 +356,14 @@ function addCourse(course, courses, favoriteCourses, fc) {
   // Deleting
   courseNode.querySelector('.x').onclick = function() {
     if (confirm('Are you sure you want to delete ' + (course.name || 'this class') + '?')) {
-      if (courseNode.querySelector('.atf').style.display == 'none') {
-        favoriteCourses.splice(favoriteCourses.indexOf(course), 1);
-        courseNode.parentNode.removeChild(courseNode);
-        save('favoriteCourses', favoriteCourses);
-        document.getElementById('button-generate').disabled = false;
+      courses.splice(courses.indexOf(course), 1);
+      courseNode.parentNode.removeChild(courseNode);
+      save('courses', courses);
+      document.getElementById('button-generate').disabled = false;
 
-        if (favoriteCourses.length == 0) {
-          document.getElementById('favorite-courses-container').classList.add('empty');
-          document.getElementById('favorite-courses-container').classList.remove('not-empty');
-        }
-      } else if (courseNode.querySelector('.fta').style.display == 'none') {
-        courses.splice(courses.indexOf(course), 1);
-        courseNode.parentNode.removeChild(courseNode);
-        save('courses', courses);
-        document.getElementById('button-generate').disabled = false;
-
-        if (courses.length == 0) {
-          document.getElementById('courses-container').classList.add('empty');
-          document.getElementById('courses-container').classList.remove('not-empty');
-        }
-      } else {
-        console.log("error deleting: invalid state");
+      if (courses.length == 0) {
+        document.getElementById('courses-container').classList.add('empty');
+        document.getElementById('courses-container').classList.remove('not-empty');
       }
     }
     return false;
@@ -396,46 +377,6 @@ function addCourse(course, courses, favoriteCourses, fc) {
     });
     save('courses', courses);
     document.getElementById('button-generate').disabled = false;
-    return false;
-  };
-
-  // Active to favorites
-  courseNode.querySelector('.atf').onclick = function() {
-    document.getElementById('favorite-courses').appendChild(courseNode);
-    favoriteCourses.push(courses.splice(courses.indexOf(course), 1)[0]);
-    save('courses', courses);
-    save('favoriteCourses', favoriteCourses);
-    document.getElementById('button-generate').disabled = false;
-
-    courseNode.getElementsByClassName('atf')[0].style = 'display: none;';
-    courseNode.getElementsByClassName('fta')[0].style = '';
-
-    if (courses.length == 0) {
-      document.getElementById('courses-container').classList.add('empty');
-      document.getElementById('courses-container').classList.remove('not-empty');
-    }
-    document.getElementById('favorite-courses-container').classList.add('not-empty');
-    document.getElementById('favorite-courses-container').classList.remove('empty');
-    return false;
-  };
-
-  // Favorite to active
-  courseNode.querySelector('.fta').onclick = function() {
-    document.getElementById('courses').appendChild(courseNode);
-    courses.push(favoriteCourses.splice(favoriteCourses.indexOf(course), 1)[0]);
-    save('courses', courses);
-    save('favoriteCourses', favoriteCourses);
-    document.getElementById('button-generate').disabled = false;
-
-    courseNode.getElementsByClassName('atf')[0].style = '';
-    courseNode.getElementsByClassName('fta')[0].style = 'display: none;';
-
-    if (favoriteCourses.length == 0) {
-      document.getElementById('favorite-courses-container').classList.add('empty');
-      document.getElementById('favorite-courses-container').classList.remove('not-empty');
-    }
-    document.getElementById('courses-container').classList.add('not-empty');
-    document.getElementById('courses-container').classList.remove('empty');
     return false;
   };
 
@@ -1313,33 +1254,9 @@ function showResult(courseIndex) {
   row.append($("<td>", {
     text: instructors
   }));
-  var timeslots = '';
-  var isfirsttimeslot = true;
-  var courseJson = courseObj;
-  for (var sectionId in courseObj['sections']) {
-    section = courseObj['sections'][sectionId];
-    if (!isfirsttimeslot) {
-      timeslots += '; ';
-    }
-    var timeslot = '';
-    var isFirstTime = true;
-    // TODO: use schedules, not scheduleStrings
-    for (var schedule of section['schedule']) {
-      if (!isFirstTime) {
-        timeslot += ', ';
-      }
-      isFirstTime = false;
-      timeslot += schedule['days']
-      timeslot += ': '
-      timeslot += schedule['start_time']
-      timeslot += ' - '
-      timeslot += schedule['end_time']
-    }
-    timeslots += timeslot;
-    isfirsttimeslot = false;
-  }
+  
   row.append($("<td>", {
-    text: timeslots
+    text: formatCourseSchedule(courseObj)
   }));
   //row.append($("<td>", {text: ''}));
 
@@ -1359,17 +1276,42 @@ function showResult(courseIndex) {
     class: "btn btn-sm btn-success schedule-button",
     courseIndex: courseIndex
   }));
-  var favButton = $("<button>", {
-    class: "btn btn-sm btn-primary favorite-button",
-    courseIndex: courseIndex
-  });
-  favButton.append("<i class='glyphicon glyphicon-star-empty' style='font-size:16px;'></i>");
-  buttonDiv.append(favButton);
 
   row.append(buttonDiv);
   $("#results-table").append(row);
 }
 
+function formatCourseSchedule(courseObj) {
+  var timeslots = '';
+  var isfirsttimeslot = true;
+  var courseJson = courseObj;
+  for (var sectionId in courseObj['sections']) {
+    section = courseObj['sections'][sectionId];
+    if (!isfirsttimeslot) {
+      timeslots += '; ';
+    }
+    timeslots += formatSectionSchedule(section);
+    isfirsttimeslot = false;
+  }
+  return timeslots
+}
+
+function formatSectionSchedule(section) {
+  var timeslot = '';
+  var isFirstTime = true;
+  for (var schedule of section['schedule']) {
+    if (!isFirstTime) {
+      timeslot += ', ';
+    }
+    isFirstTime = false;
+    timeslot += schedule['days']
+    timeslot += ':\xa0'
+    timeslot += schedule['start_time']
+    timeslot += '\xa0-\xa0'
+    timeslot += schedule['end_time']
+  }
+  return timeslot;
+}
 
 function repopulateChart() {
   $("#results-table").find("tbody").remove();
@@ -1550,62 +1492,35 @@ function addExpandedData(index) {
   var index = 1;
   jQuery.each(courseObj['sections'], function() {
     var prof = "";
-    if (this['sectionInstructor']) {
-      var instructordata = this['sectionInstructor'];
+    if (this['instructors']) {
+      var instructordata = this['instructors'];
       jQuery.each(instructordata, function() {
-        if (this['lastName']) {
-          if (prof.length > 0) {
-            prof += ', ';
-          }
-          prof += this['lastName']
-        } else if (this['firstName']) {
-          if (prof.length > 0) {
-            prof += ', ';
-          }
-          prof += this['firstName']
+        if (prof.length > 0) {
+          prof += ', ';
         }
+        prof += this.split(',')[0]
       });
     }
 
     var term = "";
     var start = "";
     var end = "";
-    if (this['calendarSessions']) {
-      var session = this['calendarSessions'][0]
-      if (session['externalId']) {
-        term = session['externalId']
-      }
-      if (session['beginDate']) {
-        start = session['beginDate']
-      }
-      if (session['endDate']) {
-        end = session['endDate']
-      }
+    session = this
+    if (session['externalId']) {
+      term = session['externalId']
+    }
+    if (session['startDate']) {
+      start = session['startDate']
+    }
+    if (session['endDate']) {
+      end = session['endDate']
     }
 
 
-    var times = ""
-    if (this['courseSectionSchedule']) {
-      var isFirstTime = true;
-      jQuery.each(this['courseSectionSchedule'], function() {
-        if (this['ClassMeetingDays']) {
-          if(!isFirstTime) {
-            times += ',<br>';
-          }
-          isFirstTime = false;
-          times += this['ClassMeetingDays'].replace(/-/g, '');
-          if (this['ClassBeginningTime']) {
-            times += ': ' + toAmPmTime(this['ClassBeginningTime']);
-          }
-          if (this['ClassEndingTime']) {
-            times += '-' + toAmPmTime(this['ClassEndingTime']);
-          }
-        }
-      });
-    }
+    var times = formatSectionSchedule(this);
 
     var filled = "??"
-    if (this['currentEnrollment']) {
+    if (this['currentEnrollment'] != null) {
       filled = this['currentEnrollment'];
     }
 
