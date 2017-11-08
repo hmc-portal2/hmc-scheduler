@@ -15,6 +15,7 @@ import urllib.parse
 from multiprocessing import Pool, Lock
 import argparse
 import requests
+import collections
 
 def test_data():
     classes_by_term, selected_term = fetch_all_portal_classes()
@@ -348,7 +349,7 @@ def merge(a, b, path=None):
     return a
 
 def parse_portal_table(portal_table):
-    classes = {}
+    classes = collections.OrderedDict()
 
     for row in portal_table:
         if (not row.has_attr('class')) or ('subItem' not in row['class']):
