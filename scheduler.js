@@ -203,7 +203,7 @@ function updateSearch() {
 
 function implementRegex(useRegex, term) {
   if (!useRegex) { //TODO: Why did we get rid of the excalmation point... used to be (!useRegex)
-    term = term.replace(/[\-\[\]\/\{\}\(\)\+\.\\\^\$\|]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".");
+    term = term.replace(/[\-\[\]\/\{\}\(\)\+\.\\\^\$\|]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".").replace(/\s+/g, "\\s+");
     return RegExp(".*" + term + ".*", "i");
   } else {
     return RegExp(term, "i");
