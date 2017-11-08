@@ -17,35 +17,20 @@ import argparse
 import requests
 import collections
 
-def test_data():
-    classes_by_term, selected_term = fetch_all_portal_classes()
-    for term in sorted(classes_by_term.keys() & api_classes_by_term.keys()):
-        if term not in api_classes_by_term:
-            print('warning: term missing from API:', term, file=sys.stderr)
-        elif term not in classes_by_term:
-            print('warning: term missing from portal:', term, file=sys.stderr)
-        else:
-            if len(classes_by_term[term].keys() - api_classes_by_term[term].keys()) > 0:
-                print('classes in {} for portal but not for api: {}'.format(
-                        term, sorted(classes_by_term[term].keys() - api_classes_by_term[term].keys()), file=sys.stderr))
-            if len(api_classes_by_term[term].keys() - classes_by_term[term].keys()) > 0:
-                print('classes in {} for api but not for portal: {}'.format(
-                        term, sorted(api_classes_by_term[term].keys() - classes_by_term[term].keys()), file=sys.stderr))
-    merge(classes_by_term, api_classes_by_term)
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--directory', '-d', default='.', action='store')
     which_data = parser.add_mutually_exclusive_group()
-    which_data.add_argument('--all', '-a', action='store_true')
+    which_data.add_argument('--all-terms', '-a', action='store_true')
     which_data.add_argument('--api-classes', '-p', action='store_true')
     parser.add_argument('--no-save', '-e', action='store_true')
+    parser.add_argument('--fetch-infomap', '-i', action='store_true')
     args = parser.parse_args()
     api_data = fetch_api_data()['data']
     api_classes_by_term = format_api_data_as_portal_data(api_data)
-    selected_term, all_terms = fetch_portal_terms_info()
+    selected_term, all_terms, courseareas = fetch_portal_info()
     api_extra_terms = list(api_classes_by_term.keys() - set(all_terms))
-    if args.all:
+    if args.all_terms:
         terms_to_fetch = all_terms
     elif args.api_classes:
         terms_to_fetch = [term for term in all_terms if term in api_classes_by_term]
@@ -53,14 +38,21 @@ def main():
         terms_to_fetch = all_terms[:all_terms.index(selected_term)+1]
     classes_by_term = fetch_some_portal_classes(terms_to_fetch)
     merge(classes_by_term, api_classes_by_term)
+    if args.fetch_infomap:
+        infomaps = {term: fetch_portal_areamap(term, courseareas) for term in terms_to_fetch}
     if not args.no_save:
         os.makedirs(args.directory, exist_ok=True)
         with open(os.path.join(args.directory, 'main.json'), 'w') as f:
-            json.dump({'terms': all_terms + api_extra_terms, 'selected': selected_term, 'selected_data': classes_by_term[selected_term]},
+            json.dump({'terms': all_terms + api_extra_terms,
+                       'areas': courseareas,
+                       'selected': selected_term,
+                       'selected_data': classes_by_term[selected_term]},
                       f, separators=(',',':'))
         for term in terms_to_fetch + api_extra_terms:
             with open(os.path.join(args.directory, term+'.json'), 'w') as f:
                 json.dump(classes_by_term[term], f, separators=(',',':'))
+            with open(os.path.join(args.directory, term+'_infomap.json'), 'w') as f:
+                json.dump(infomaps[term], f, separators=(',',':'))
 
 def format_api_data_as_portal_data(api_data):
     api_classes = {api_class['courseNumber']: api_class for api_class in api_data if 'courseNumber' in api_class}
@@ -221,37 +213,46 @@ def fetch_api_data():
     print(res.content, file=sys.stderr)
     raise json_err
 
-def fetch_portal(term=None, update_pb=lambda: print('.', end='', flush=True, file=sys.stderr)):
+def fetch_portal(term=None, coursearea=None):
     try:
         with Browser('phantomjs') as browser:
-            return fetch_portal_with_browser(browser, term, update_pb)
+            return fetch_portal_with_browser(browser, term, coursearea)
     except:
         print('x', end='', flush=True, file=sys.stderr)
         with Browser('chrome', headless=True) as browser:
-            return fetch_portal_with_browser(browser, term, update_pb)
+            return fetch_portal_with_browser(browser, term, coursearea)
 
-def fetch_portal_with_browser(browser, term, update_pb):
-    update_pb()
+def fetch_portal_with_browser(browser, term, coursearea):
+    print('.', end='', flush=True, file=sys.stderr)
     browser.visit('https://portal.hmc.edu/ICS/default.aspx?portlet=Course_Schedules&screen=Advanced+Course+Search')
-    update_pb()
+    print('.', end='', flush=True, file=sys.stderr)
     if term is not None:
         term_selector = browser.find_by_id('pg0_V_ddlTerm').first
         selected_term = term_selector.find_by_css('[selected]').first.text
         if term.replace(' ', '') != selected_term.replace(' ', ''):
             term_selector.select_by_text(term)
-    update_pb()
-    browser.fill('pg0$V$txtCourseRestrictor', '*')
+    print('.', end='', flush=True, file=sys.stderr)
+    if coursearea is None:
+        browser.fill('pg0$V$txtCourseRestrictor', '*')
+    else:
+        coursearea_selector = browser.find_by_id('pg0_V_ddlAdditional').first
+        coursearea_selector.select_by_text(coursearea)
     browser.click_link_by_id('pg0_V_btnSearch')
-    update_pb()
+    print('.', end='', flush=True, file=sys.stderr)
     if len(browser.find_by_id('pg0_V_lnkShowAll')) > 0:
         browser.click_link_by_id('pg0_V_lnkShowAll')
-    update_pb()
+    print('.', end='', flush=True, file=sys.stderr)
     return browser.html
 
 def fetch_portal_with_term(term):
-    return term, fetch_portal(term)
+    return term, fetch_portal(term=term)
 
-def fetch_portal_terms_info():
+def fetch_portal_with_coursearea(term_coursearea):
+    term = term_coursearea[0]
+    coursearea = term_coursearea[1]
+    return coursearea, fetch_portal(term=term, coursearea=coursearea)
+
+def fetch_portal_info():
     with Browser('phantomjs') as browser:
         print('.', end='', flush=True, file=sys.stderr)
         browser.visit('https://portal.hmc.edu/ICS/default.aspx?portlet=Course_Schedules&screen=Advanced+Course+Search')
@@ -259,13 +260,15 @@ def fetch_portal_terms_info():
         term_selector = browser.find_by_id('pg0_V_ddlTerm').first
         terms = [element.text for element in term_selector.find_by_tag('option')]
         selected_term = term_selector.find_by_css('[selected]').first.text
+        coursearea_selector = browser.find_by_id('pg0_V_ddlAdditional').first
+        selected_coursearea = coursearea_selector.find_by_css('[selected]').first.text
+        courseareas = [element.text.strip()
+                       for element in coursearea_selector.find_by_tag('option')
+                       if len(element.text.strip()) > 0 and element.text != selected_coursearea]
+
+    return selected_term, terms, courseareas
 
     return selected_term, terms
-
-def fetch_all_portal_terms():
-    selected_term, terms = fetch_portal_terms_info()
-    portal_data = fetch_portal_terms(terms)
-    return selected_term, portal_data
 
 def fetch_portal_terms(terms):
     portal_data = {}
@@ -374,14 +377,6 @@ def parse_portal_table(portal_table):
 
     return classes
 
-def fetch_all_portal_classes():
-    portal_terms, selected_term = fetch_all_portal_terms()
-    classes_by_term = {}
-    for term in portal_terms:
-        classes_by_term[term] = parse_portal_table(get_portal_table(portal_terms[term]))
-
-    return classes_by_term, selected_term
-
 def fetch_some_portal_classes(terms):
     portal_terms = fetch_portal_terms(terms)
     classes_by_term = {}
@@ -390,9 +385,6 @@ def fetch_some_portal_classes(terms):
         classes_by_term[term] = parse_portal_table(get_portal_table(portal_terms[term]))
 
     return classes_by_term
-
-def fetch_portal_classes():
-    return parse_portal_table(get_portal_table(fetch_portal()))
 
 CLASS_ID_RE_STR = r'''
     ^
@@ -542,6 +534,20 @@ def reformat_time(time_str, time_ampm):
 DATE_RE = re.compile('^(?P<month>\d{1,2})/(?P<day>\d{1,2})/(?P<year>\d{4})$')
 def reformat_date(date_str):
     return '{year}-{month:0>2}-{day:0>2}'.format(**DATE_RE.match(date_str).groupdict())
+
+def fetch_portal_areamap(term, courseareas):
+    areamap = {}
+
+    pool = Pool(processes=min(len(courseareas), 10))
+    portal_data_list = pool.map(fetch_portal_with_coursearea, [(term, area) for area in courseareas])
+
+    for coursearea, data in portal_data_list:
+        courses = parse_portal_table(get_portal_table(data))
+        areamap[coursearea] = {course_id: [section['section_id'] for section in course['sections'].values()]
+                         for course_id, course in courses.items()}
+        print('.', end='', flush=True, file=sys.stderr)
+
+    return areamap
 
 if __name__ == '__main__':
     main()
