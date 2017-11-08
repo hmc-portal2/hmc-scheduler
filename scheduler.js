@@ -157,8 +157,8 @@ function updateSearch() {
   var title = document.getElementById("course-title").value;
   var useTitleRegex = document.getElementById("title-regex").checked;
   var useCodeRegex = document.getElementById("code-regex").checked;
-  //var instructor = document.getElementById("instructor").value;
-  //var useInstructorRegex = document.getElementById("prof-regex").checked;
+  var instructor = document.getElementById("instructor").value;
+  var useInstructorRegex = document.getElementById("prof-regex").checked;
   var campus = $("#campus_btn").attr('realVal') || false;
   var filled = document.getElementById("filled-regex").checked;
   var department = $("#department_btn").attr('realVal') || false;
@@ -173,7 +173,7 @@ function updateSearch() {
   // Implement title, code, and instructor regex
   var titleRe = implementRegex(useTitleRegex, title);
   var codeRe = implementRegex(useCodeRegex, code);
-  //var instructorRe = implementRegex(useInstructorRegex, instructor);
+  var instructorRe = implementRegex(useInstructorRegex, instructor);
 
   validCourses = []
   for(var id in globalCourseData[globalTerm]) {
@@ -181,7 +181,7 @@ function updateSearch() {
   }
   validCourses = getCoursesFromAttributeRegex(validCourses, "name", titleRe);
   validCourses = getCoursesFromAttributeRegex(validCourses, "id", codeRe);
-  //validCourses = getInstructorRegex(validCourses, instructorRe);
+  validCourses = getInstructorRegex(validCourses, instructorRe);
   if (campus != false) {
     validCourses = getCoursesFromAttribute(validCourses, "campus", campus);
   }
@@ -1016,15 +1016,16 @@ function getCoursesFromAttributeRegex(response, attribute, expression) {
 function getInstructorRegex(response, expression) {
   var possibleCourses = [];
   for (key of response) {
-    if (key['courseSections']) {
-      var allSections = key['courseSections'];
+    if (key['sections']) {
+      var allSections = key['sections'];
       var addIt = false;
-      for (section of allSections) {
-        if (section['sectionInstructor']) {
-          var allProfs = section['sectionInstructor'];
+      for (sectionId in allSections) {
+        section = allSections[sectionId]
+        if (section['instructors']) {
+          var allProfs = section['instructors'];
           for (prof of allProfs) {
-            var name = (prof['firstName'] || "") + " " + (prof['lastName'] || "");
-            if (name != " " && name.match(expression)) {
+            var name = prof;
+            if (name.match(expression)) {
               addIt = true;
               break;
             }
