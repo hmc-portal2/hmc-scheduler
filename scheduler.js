@@ -25,7 +25,7 @@ fetch('/data/main.json').then(function(response){
   })
   fetchCourseAreas();
   //getAllDepartments();
-  //addExtraAttributes();
+  addExtraAttributes();
   updateSearch();
 })
 
@@ -65,38 +65,45 @@ function getAllDepartments() {
 
 
 function addExtraAttributes() {
-  for (key of globalCourseData) {
-
+  for (var id in globalCourseData[globalTerm]) {
+    key = globalCourseData[globalTerm][id]
     //Add the campus the course is on to its attributes
     //Currently, courses which are jointly taught (JT) will not show up no matter which college you select.
-    if (key['id']) {
-      var courseCode = key['id'].slice(-2);
-      var college = "";
-      switch (courseCode) {
-        case 'HM':
-          college = "Harvey Mudd";
-          break;
-        case 'CG':
-          college = "Claremont Graduate University";
-          break;
-        case 'CM':
-          college = "Claremont McKenna";
-          break;
-        case 'SC':
-          college = "Scripps";
-          break;
-        case 'PO':
-          college = "Pomona";
-          break;
-        case 'PZ':
-          college = "Pitzer";
-          break;
-        default:
-          college = "Other";
-          break;
-      }
-      key.campus = college;
+    var courseCode = id.slice(-2);
+    var college = "";
+    switch (courseCode) {
+      case 'HM':
+        college = "Harvey Mudd";
+        break;
+      case 'CG':
+        college = "Claremont Graduate University";
+        break;
+      case 'CM':
+        college = "Claremont McKenna";
+        break;
+      case 'SC':
+        college = "Scripps";
+        break;
+      case 'PO':
+        college = "Pomona";
+        break;
+      case 'PZ':
+        college = "Pitzer";
+        break;
+      case 'KS':
+        college = "Keck Science";
+        break;
+      case 'JM':
+        college = "Joint Music";
+        break;
+      case 'JP':
+        college = "CMS PE";
+        break;
+      default:
+        college = "Other";
+        break;
     }
+    key.campus = college;
     // Add its filled status (whether or not there are empty seats left)
     // Currently, full is false if there is even 1 unfilled section
 
@@ -104,14 +111,12 @@ function addExtraAttributes() {
     //sectionTimeMap = {};
     for (var i in key['sections']) {
       section = key['sections'][i];
-      for (session of section['calendarSessions']) {
-        //var term = session['designator'];
-        var full = true;
-        if (section['capacity'] && section['currentEnrollment'] && (section['currentEnrollment'] < section['capacity'])) {
-          full = false;
-        } 
-        session.full = full;
-      }
+      //var term = session['designator'];
+      var full = true;
+      if (section['capacity'] && section['currentEnrollment'] && (section['currentEnrollment'] < section['capacity'])) {
+        full = false;
+      } 
+      section.full = full;
     }
   }
 }
@@ -1115,7 +1120,7 @@ function attributeFilter(response, attribute, expected, mustBe) {
 
 (function getCampuses() {
   createDropdownBlock("Campus:", "campus", "All");
-  var terms = ["All", "Claremont McKenna", "Harvey Mudd", "Pitzer", "Pomona", "Scripps", "Other"];
+  var terms = ["All", "Claremont McKenna", "Harvey Mudd", "Pitzer", "Pomona", "Scripps", "Keck Science", "Joint Music", "CMS PE", "Other"];
   createDropdown("#campus", terms);
 }());
 
