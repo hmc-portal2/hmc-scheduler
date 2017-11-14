@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from splinter import Browser
 from bs4 import BeautifulSoup
@@ -51,8 +51,9 @@ def main():
         for term in terms_to_fetch + api_extra_terms:
             with open(os.path.join(args.directory, term+'.json'), 'w') as f:
                 json.dump(classes_by_term[term], f, separators=(',',':'))
-            with open(os.path.join(args.directory, term+'_infomap.json'), 'w') as f:
-                json.dump(infomaps[term], f, separators=(',',':'))
+            if args.fetch_infomap:
+                with open(os.path.join(args.directory, term+'_infomap.json'), 'w') as f:
+                    json.dump(infomaps[term], f, separators=(',',':'))
 
 def format_api_data_as_portal_data(api_data):
     api_classes = {api_class['courseNumber']: api_class for api_class in api_data if 'courseNumber' in api_class}
