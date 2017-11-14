@@ -30,7 +30,7 @@ fetch('/data/main.json').then(function(response){
 })
 
 function fetchCourseAreas() {
-  term = $("#course-terms_btn").attr('realVal');
+  term = globalTerm;
   if(!(term in globalCourseAreas)) {
     fetch('/data/'+term+'_infomap.json').then(function(response) {
       return response.json();
@@ -69,8 +69,8 @@ function addExtraAttributes() {
 
     //Add the campus the course is on to its attributes
     //Currently, courses which are jointly taught (JT) will not show up no matter which college you select.
-    if (key['courseNumber']) {
-      var courseCode = key['courseNumber'].slice(-2);
+    if (key['id']) {
+      var courseCode = key['id'].slice(-2);
       var college = "";
       switch (courseCode) {
         case 'HM':
@@ -102,38 +102,8 @@ function addExtraAttributes() {
 
     // Default: starts out as true (and will remain that way if there is no data on fullness)
     //sectionTimeMap = {};
-    for (var i = 0; i < key['courseSections'].length; i++) {
-      section = key['courseSections'][i];
-      // was there to fix API bug that has been fixed
-      termMatch = /^(.*((?:FA|SP|SU)20[0-9][0-9](?:(?:F|P|S)[1-9])?))[0-9]*$/.exec(
-        section['externalId']);
-      if(termMatch) {
-        // missing calendarSessions should be there: try to fix it
-        if(!section['calendarSessions']) {
-          section['calendarSessions'] = [{designator: termMatch[2]}];
-        }
-        section['sectionName'] = termMatch[1];
-        /*if(!sectionTimeMap[termMatch[1]]) {
-          sectionTimeMap[termMatch[1]] = section;
-        } else {
-          realSection = sectionTimeMap[termMatch[1]];
-          if(section['courseSectionSchedule']) {
-            if(!realSection['courseSectionSchedule']) {
-              realSection['courseSectionSchedule'] = [];
-            }
-            for(var schedule of section['courseSectionSchedule']) {
-              realSection['courseSectionSchedule'].push(schedule);
-            }
-          }
-          key['courseSections'].splice(i,1);
-          i--;
-          continue;
-        }*/
-      } else {
-        //TODO: what are these broken sections?
-        console.log(key,section);
-        continue;
-      }
+    for (var i in key['sections']) {
+      section = key['sections'][i];
       for (session of section['calendarSessions']) {
         //var term = session['designator'];
         var full = true;
@@ -158,6 +128,7 @@ function updateSearch() {
     globalTerm = "";
   } else {
     if(!(globalTerm in globalCourseData)) {
+      fetchCourseAreas();
       globalCourseData[globalTerm] = null;
       term = globalTerm
       fetch('/data/' + term + '.json').then(function(response){
@@ -1371,7 +1342,7 @@ function addShowMore() {
   var button = $('<button>', {
     class: 'btn btn-sm btn-primary show-more-button',
     id: 'show-more-btn',
-    text: globalShowMoreIndex+' of '+globalCourseSearch.length+' results. Show More...'
+    text: globalShowMoreIndex+' of '+globalCourseSearch.length+' results. Show All...'
   });
   cell.append(button);
   row.append(cell);
@@ -1389,8 +1360,7 @@ function removeShowMore() {
 function showMore() {
   removeButtonListeners();
   removeShowMore();
-  for (var i = globalShowMoreIndex; 
-       i < globalCourseSearch.length && i < globalShowMoreIndex + 100; i++) {
+  for (var i = globalShowMoreIndex; i < globalCourseSearch.length; i++) {
     showResult(i);
   }
   if(i < globalCourseSearch.length) {
