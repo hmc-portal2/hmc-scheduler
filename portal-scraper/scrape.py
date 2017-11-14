@@ -17,6 +17,23 @@ import argparse
 import requests
 import collections
 
+MAX_PORTAL_RETRIES = 5
+MAX_PORTAL_CHROME_RETRIES = 2
+MAX_PORTAL_FIREFOX_RETRIES = 2
+
+ENDPOINT = 'www.lingkapis.com'
+SERVICE = '/v1/harveymudd/coursecatalog/ps/datasets/coursecatalog'
+QUERYSTRING = '?limit=1000000000'
+MAX_RETRIES = 15
+
+if 'KEY' in os.environ and 'SECRET' in os.environ:
+    KEY = os.environ['KEY']
+    SECRET = os.environ['SECRET']
+else:
+    print('KEY and SECRET not provided; API not available', file=sys.stderr)
+    KEY = ''
+    SECRET = ''
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--directory', '-d', default='.', action='store')
@@ -160,19 +177,6 @@ def reformat_api_time(api_time):
     time_obj = datetime.time(hour=hours, minute=minutes)
     return time_obj.isoformat()
 
-ENDPOINT = 'www.lingkapis.com'
-SERVICE = '/v1/harveymudd/coursecatalog/ps/datasets/coursecatalog'
-QUERYSTRING = '?limit=1000000000'
-MAX_RETRIES = 15
-
-if 'KEY' in os.environ and 'SECRET' in os.environ:
-    KEY = os.environ['KEY']
-    SECRET = os.environ['SECRET']
-else:
-    print('KEY and SECRET not provided; API not available', file=sys.stderr)
-    KEY = ''
-    SECRET = ''
-
 def create_signature(secret, signingStr):
     '''Creates signature for a signing string'''
     message = bytes(signingStr, 'ascii')
@@ -215,13 +219,25 @@ def fetch_api_data():
     raise json_err
 
 def fetch_portal(term=None, coursearea=None):
-    try:
-        with Browser('phantomjs') as browser:
-            return fetch_portal_with_browser(browser, term, coursearea)
-    except:
-        print('x', end='', flush=True, file=sys.stderr)
-        with Browser('chrome', headless=True) as browser:
-            return fetch_portal_with_browser(browser, term, coursearea)
+    for i in range(MAX_PORTAL_RETRIES):
+        try:
+            with Browser('phantomjs') as browser:
+                return fetch_portal_with_browser(browser, term, coursearea)
+        except:
+            print('x', end='', flush=True, file=sys.stderr)
+    for i in range(MAX_PORTAL_CHROME_RETRIES):
+        try:
+            with Browser('chrome', headless=True) as browser:
+                return fetch_portal_with_browser(browser, term, coursearea)
+        except:
+            print('X', end='', flush=True, file=sys.stderr)
+    for i in range(MAX_PORTAL_FIREFOX_RETRIES):
+        try:
+            with Browser('firefox') as browser:
+                return fetch_portal_with_browser(browser, term, coursearea)
+        except:
+            print('X', end='', flush=True, file=sys.stderr)
+    raise Exception('error fetching {} -> {}', term, coursearea)
 
 def fetch_portal_with_browser(browser, term, coursearea):
     print('.', end='', flush=True, file=sys.stderr)
