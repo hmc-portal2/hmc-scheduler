@@ -16,6 +16,7 @@ from multiprocessing import Pool, Lock
 import argparse
 import requests
 import collections
+import subprocess
 
 MAX_PORTAL_RETRIES = 5
 MAX_PORTAL_CHROME_RETRIES = 2
@@ -28,11 +29,16 @@ MAX_RETRIES = 15
 
 if 'KEY' in os.environ and 'SECRET' in os.environ:
     KEY = os.environ['KEY']
-    SECRET = os.environ['SECRET']
+    SECRET = bytes(os.environ['SECRET'], 'ascii')
 else:
-    print('KEY and SECRET not provided; API not available', file=sys.stderr)
-    KEY = ''
-    SECRET = ''
+    try:
+        mydir = os.path.dirname(os.path.abspath(__file__))
+        KEY = subprocess.check_output(['bash', '-c', 'source .env && printf %s "$KEY"'], cwd=mydir).decode('ascii')
+        SECRET = subprocess.check_output(['bash', '-c', 'source .env && printf %s "$SECRET"'], cwd=mydir)
+    except:
+        print('KEY and SECRET not provided; API not available', file=sys.stderr)
+        KEY = ''
+        SECRET = b''
 
 def main():
     parser = argparse.ArgumentParser()
@@ -180,7 +186,6 @@ def reformat_api_time(api_time):
 def create_signature(secret, signingStr):
     '''Creates signature for a signing string'''
     message = bytes(signingStr, 'ascii')
-    secret = bytes(secret, 'ascii')
     signature = base64.b64encode(hmac.new(secret, message, digestmod=hashlib.sha1).digest())
     return signature
 
@@ -237,7 +242,7 @@ def fetch_portal(term=None, coursearea=None):
                 return fetch_portal_with_browser(browser, term, coursearea)
         except:
             print('X', end='', flush=True, file=sys.stderr)
-    raise Exception('error fetching {} -> {}', term, coursearea)
+    raise Exception('error fetching portal: term="{}", area="{}"'.format(term, coursearea))
 
 def fetch_portal_with_browser(browser, term, coursearea):
     print('.', end='', flush=True, file=sys.stderr)
