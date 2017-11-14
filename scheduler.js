@@ -4,6 +4,7 @@ var globalCourses;
 var globalFavCourses;
 var globalTerm;
 var globalShowMoreIndex;
+var globalCourseAreas = {};
 
 fetch('/data/main.json').then(function(response){
   return response.json();
@@ -11,19 +12,35 @@ fetch('/data/main.json').then(function(response){
   globalTerm = json['selected'];
   globalCourseData[globalTerm] = json['selected_data'];
   createDropdownBlock("Course Term:", "course-terms", globalTerm);
+  createDropdownBlock("Course Area:", "course-areas", "All");
   var terms = json['terms']; // TODO: implement all
+  var areas = json['areas'];
+  areas.unshift("All")
   createDropdown("#course-terms", terms);
+  createDropdown("#course-areas", areas);
   $(".dropdown-menu li a").click(function() {
     $(this).parents(".dropdown").find(".btn").html($(this).text() + getCaret());
     $(this).parents(".dropdown").find(".btn").attr('realVal', $(this).text());
     updateSearch();
   })
+  fetchCourseAreas();
   //getAllDepartments();
   //addExtraAttributes();
   updateSearch();
 })
 
-
+function fetchCourseAreas() {
+  term = $("#course-terms_btn").attr('realVal');
+  if(!(term in globalCourseAreas)) {
+    fetch('/data/'+term+'_infomap.json').then(function(response) {
+      return response.json();
+    }).then(function(json){
+      globalCourseAreas[term] = json;
+      area = $("#course-areas_btn").attr('realVal');
+      if(area != "All") updateSearch();
+    })
+  }
+}
 
 function getAllDepartments() {
   var depts = {};
@@ -160,6 +177,7 @@ function updateSearch() {
   var instructor = document.getElementById("instructor").value;
   var useInstructorRegex = document.getElementById("prof-regex").checked;
   var campus = $("#campus_btn").attr('realVal') || false;
+  var coursearea = $("#course-areas_btn").attr('realVal') || false;
   var filled = document.getElementById("filled-regex").checked;
   var department = $("#department_btn").attr('realVal') || false;
   if (campus === "All") {
@@ -190,6 +208,10 @@ function updateSearch() {
   }
   if (department != false) {
     validCourses = getCoursesFromDept(validCourses, department);
+  }
+
+  if (coursearea != "All" && term in globalCourseAreas) {
+    validCourses = getCoursesFromArea(validCourses, coursearea);
   }
 
 //   if (globalTerm != "") {
@@ -1077,6 +1099,18 @@ function getCoursesFromDept(response, expression) {
   return possibleCourses;
 }
 
+
+function getCoursesFromArea(response, coursearea) {
+  var areamap = globalCourseAreas[term][coursearea];
+  var possibleCourses = [];
+  for (key of response) {
+    if(key['id'] in areamap) {
+      //TODO: filter by sections
+      possibleCourses.push(key);
+    }
+  }
+  return possibleCourses;
+}
 
 
 function attributeFilter(response, attribute, expected, mustBe) {
