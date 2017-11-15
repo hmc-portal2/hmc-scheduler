@@ -271,7 +271,7 @@ function toCourseObject(courseJson) {
     name: courseName,
     times: timeslots,
     selected: true,
-    data: courseJson,
+    data: courseJson
   };
 }
 
@@ -553,7 +553,7 @@ function VEventObject(timeBlocks) {
   this.startTime = timeBlocks[0].from;
   this.endTime = timeBlocks[0].to;
 
-  this.startDate = new Date(Date.parse(timeBlocks[0].sectionData.calendarSessions[0].beginDate));
+  this.startDate = new Date(Date.parse(timeBlocks[0].sectionData.beginDate));
 
   // Update the start date of the class to the first day where there is
   // actually a class (according to the MTWRF flags)
@@ -565,7 +565,7 @@ function VEventObject(timeBlocks) {
   var daysTillFirstClass = Math.min.apply(null, daysTillClasses);
   this.startDate.setDate(this.startDate.getDate() + daysTillFirstClass);
 
-  this.endDate = new Date(Date.parse(timeBlocks[0].sectionData.calendarSessions[0].endDate));
+  this.endDate = new Date(Date.parse(timeBlocks[0].sectionData.endDate));
   this.name = timeBlocks[0].course.name;
   this.loc = timeBlocks[0].loc;
   this.toString = function() {
@@ -618,9 +618,9 @@ function generateSchedules(courses) {
 
       // Extract the section info from the string, if it's there.
       var section = timeSlot.indexOf(': ') > -1 ? timeSlot.split(': ')[0] : '';
+      var sectionNumber = parseInt(section.slice(12,14)); // courseids are a fixed length
 
-      var sectionData = course.data && course.data.courseSections? course.data.courseSections[index]: null;
-
+      var sectionData = course.data && section? course.data.sections[sectionNumber]: null;
       // Split it into a list of each day's time slot
       var args = [];
       // The lookahead at the end is because meeting times are delimited by commas (oops), but the location may contain commas.
@@ -1125,7 +1125,7 @@ function attributeFilter(response, attribute, expected, mustBe) {
 }());
 
 
-(function getDepartments() {
+/*(function getDepartments() {
   createDropdownBlock("Department:", "department", "All");
   // Ideally, we could generate these terms by looping through each object 
   // and collecting every unique department name.
@@ -1151,7 +1151,7 @@ function attributeFilter(response, attribute, expected, mustBe) {
                'Physical Education',
                'Physics'];
   createDropdown("#department", terms);
-}());
+}());*/
 
 
 
