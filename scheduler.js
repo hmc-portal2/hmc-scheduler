@@ -553,7 +553,7 @@ function VEventObject(timeBlocks) {
   this.startTime = timeBlocks[0].from;
   this.endTime = timeBlocks[0].to;
 
-  this.startDate = new Date(Date.parse(timeBlocks[0].sectionData.beginDate));
+  this.startDate = new Date(Date.parse(timeBlocks[0].sectionData.startDate));
 
   // Update the start date of the class to the first day where there is
   // actually a class (according to the MTWRF flags)
