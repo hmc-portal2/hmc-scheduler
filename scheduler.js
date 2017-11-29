@@ -420,8 +420,37 @@ function loadSchedule(schedules, i) {
   document.getElementById('page-counter').classList.add(schedules.length ? 'not-empty' : 'empty');
   document.getElementById('page-counter').classList.remove(schedules.length ? 'empty' : 'not-empty');
 
+  setCreditCounter(schedules[i] || []);
+
   drawSchedule(schedules[i] || []);
   return i;
+}
+
+function setCreditCounter(schedule) {
+  var seenSoFar = new Set();
+  var count = schedule.filter(function(timeSlot) {
+    if (seenSoFar.has(timeSlot.section)) return false;
+    seenSoFar.add(timeSlot.section);
+    return true;
+  }).map(function(course) {
+    if (!course.sectionData || !course.sectionData['credits'])
+      return NaN;
+
+    switch(course.sectionData['campus']) {
+      case 'HM':
+        // Mudd courses are worth their full value.
+        return course.sectionData['credits'];
+      case 'JM':
+        // Joint music courses seems to be halved?
+        return course.sectionData['credits'] * 2;
+      default:
+        // Other colleges' courses need to be multiplied by three.
+        return course.sectionData['credits'] * 3;
+    }
+  }).reduce(function(a, b) {
+    return a + b;
+  }, 0);
+  document.getElementById('credit-counter').innerHTML = isNaN(count) ? '' : '(' + count.toFixed(1) + ' credits)';
 }
 
 function drawSchedule(schedule) {
@@ -690,7 +719,6 @@ function generateSchedules(courses) {
         var uniqueClassesThen = unique_classes(classesThen);
         if (uniqueClassesThen.length > 1) {
           // check to see if their dates are all disjoint
-          console.log(uniqueClassesThen);
           for(var i = 0; i < uniqueClassesThen.length-1; i++) {
             for(var j = i+1; j < uniqueClassesThen.length; j++) {
               if(sectionDatesOverlap(uniqueClassesThen[i]['sectionData'], uniqueClassesThen[j]['sectionData'])) {
@@ -795,25 +823,7 @@ function messageOnce(str) {
 
     // Display them all
     schedulePosition = loadSchedule(schedules, 0);
-
-    // The credit count
-    var count = courses.filter(function(course) {
-      return course.selected;
-    }).map(function(course) {
-      if (!course.data || !course.data['creditValue'])
-        return NaN;
-
-      // Mudd courses are worth their full value.
-      if ((course.data['courseNumber'].indexOf('HM') == -1))
-        return course.data['creditValue'];
-
-      // Other colleges' courses need to be multiplied by three.
-      return course.data['creditValue'] * 3;
-    }).reduce(function(a, b) {
-      return a + b;
-    }, 0);
-    document.getElementById('credit-counter').innerHTML = isNaN(count) ? '' : '(' + count.toFixed(1) + ' credits)';
-
+    console.log(schedules, schedulePosition);
     this.disabled = true;
   };
 
@@ -843,69 +853,6 @@ function messageOnce(str) {
     else if (e.keyCode == 37)
       document.getElementById('button-left').onclick();
   };
-
-  // Messages from the bookmarklet
-  /*window.onmessage = function (e) {
-    // Extract information from the message
-    try {
-      var data = JSON.parse(e.data);
-    } catch (e) {
-      return;
-    }
-
-    var name = data['courseName'];
-
-    // Build the timeSlot string.
-    var timeSlot =
-      data['courseCode'].replace(/\s+/g, ' ') + ' (' +
-
-      data['professors'].map(function (prof) {
-          // Only last names to save space.
-          return prof.split(',')[0];
-        }).join(', ') + '): ' +
-
-      data['timeSlots'].filter(function (timeSlot) {
-          // Make sure they're actually of the correct format
-          return /([MTWRF]+) (\d?\d):(\d\d)\s*(AM|PM)?\s*\-\s?(\d?\d):(\d\d)\s*(AM|PM)?/gi.test(timeSlot);
-        }).filter(function (timeSlot, i, arr) {
-          // Remove duplicates
-          return arr.lastIndexOf(timeSlot) == i;
-        }).join(', ');
-
-    // See if the course being passed in is already in the course list
-    var course = false;
-    for (var i = 0; i < courses.length; i++)
-      if (courses[i].name == name) {
-        course = courses[i];
-        break;
-      }
-
-    // Not there yet? Make it.
-    if (!course) {
-      course = {
-        'name': name,
-        'selected': true,
-        'times': timeSlot,
-        'data': data
-      };
-      courses.push(course);
-      addCourse(course, courses, favoriteCourses, false);
-    }
-
-    // Add this time to the list if it's not already there
-    else {
-      course.data = data;
-      var existingTimes = course.times.split('\n');
-      if (existingTimes.indexOf(timeSlot) == -1) {
-        existingTimes.push(timeSlot);
-        course._node.querySelector('textarea').value = course.times = existingTimes.join('\n');
-      }
-      course._node.querySelector('input[type="text"]').onfocus();
-    }
-
-    save('courses', courses);
-    document.getElementById('button-generate').onclick();
-  };*/
 
   // Display all the courses
   if (courses.length) {
