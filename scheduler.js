@@ -689,13 +689,34 @@ function generateSchedules(courses) {
         });
         var uniqueClassesThen = unique_classes(classesThen);
         if (uniqueClassesThen.length > 1) {
-          return false;
+          // check to see if their dates are all disjoint
+          console.log(uniqueClassesThen);
+          for(var i = 0; i < uniqueClassesThen.length-1; i++) {
+            for(var j = i+1; j < uniqueClassesThen.length; j++) {
+              if(sectionDatesOverlap(uniqueClassesThen[i]['sectionData'], uniqueClassesThen[j]['sectionData'])) {
+                return false;
+              }
+            }
+          }
+          return true;
         }
       }
     }
 
     return true;
   });
+}
+
+function sectionDatesOverlap(sectionData_a, sectionData_b) {
+  a_start = new Date(sectionData_a['startDate'])
+  a_end = new Date(sectionData_a['endDate'])
+  b_start = new Date(sectionData_b['startDate'])
+  b_end = new Date(sectionData_b['endDate'])
+  if (a_start <= b_start && b_start <= a_end) return true; // b starts in a
+  if (a_start <= b_end   && b_end   <= a_end) return true; // b ends in a
+  if (b_start <  a_start && a_end   <  b_end) return true; // a in b
+  if (a_start == b_start && a_end   == b_end) return true; // a is b
+  return false;
 }
 
 // This function takes a list of courses and reduces it - removing any
