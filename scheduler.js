@@ -433,7 +433,7 @@ function setCreditCounter(schedule) {
     seenSoFar.add(timeSlot.section);
     return true;
   }).map(function(course) {
-    if (!course.sectionData || !course.sectionData['credits'])
+    if (!course.sectionData || !('credits' in course.sectionData))
       return NaN;
 
     switch(course.sectionData['campus']) {
