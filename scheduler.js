@@ -1011,13 +1011,9 @@ function getInstructorRegex(response, expression) {
 function getCoursesFilled(validCourses) {
   var possibleCourses = [];
   for (course of validCourses) {
-    for (section of key['courseSections']) {
-      for (session of section['calendarSessions']) {
-        if (session['designator'] === globalTerm) {
-          if (session['full'] === false) {
-            possibleCourses.push(course);
-          }
-        }
+    for (sectionId in course.sections) {
+      if (course.sections[sectionId]['status'] === "Open") {
+        possibleCourses.push(course);
       }
     }
   }
