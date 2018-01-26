@@ -1234,16 +1234,19 @@ function showResult(courseIndex) {
     text: formatCourseSchedule(courseObj)
   }));
   //row.append($("<td>", {text: ''}));
-
   
-  var crCell = $("<td>")
+  row.append($("<td>", {
+    text: formatCourseStatus(courseObj)
+  }));
+
+  /*var crCell = $("<td>")
   crCell.append($("<a>", {
     text: "Claremontreview",
     href: "http://claremontreview.com/courses/" + courseObj['id'].replace(/(\s)+/g, '_'),
     target: "blank",
     style: "text-decoration:underline; color:0x4444cc;"
   }));
-  row.append(crCell);
+  row.append(crCell);*/
   
   var buttonDiv = $("<td>");
   buttonDiv.append($("<button>", {
@@ -1254,6 +1257,31 @@ function showResult(courseIndex) {
 
   row.append(buttonDiv);
   $("#results-table").append(row);
+}
+
+function formatCourseStatus(courseObj) {
+  var sectionStatuses = {}
+  for (var sectionId in courseObj['sections']) {
+    section = courseObj['sections'][sectionId];
+    if(!(section.status in sectionStatuses)) {
+      sectionStatuses[section.status] = 1;
+    } else {
+      sectionStatuses[section.status]++;
+    }
+  }
+  if(Object.keys(sectionStatuses).length == 1) {
+    return Object.keys(sectionStatuses)[0];
+  }
+  statusString = "";
+  first = true;
+  for(status in sectionStatuses) {
+    if(!first) {
+      statusString += ", ";
+    }
+    statusString += sectionStatuses[status] + " " + status;
+    first = false;
+  }
+  return statusString;
 }
 
 function formatCourseSchedule(courseObj) {
@@ -1503,6 +1531,11 @@ function addExpandedData(index) {
       capacity = this['capacity'];
     }
 
+    var status = "??"
+    if (this['status']) {
+      status = this['status'];
+    }
+
 
     //Section string
 
@@ -1510,7 +1543,7 @@ function addExpandedData(index) {
     var profLine = "<td>" + prof + "</td>";
     var scheduleLine = "<td>" + times + "</td>";
     var timeLine = "<td>" + start + " - " + end + "</td>";
-    var availabilityLine = "<td>" + filled + "/" + capacity + " seats</td>";
+    var availabilityLine = "<td>" + filled + "/" + capacity + " seats (" + status + ")</td>";
 
     var subRow = $("<tr>");
     subRow.append(sectionLine);
