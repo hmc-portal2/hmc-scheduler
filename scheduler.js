@@ -1009,6 +1009,7 @@ function getCoursesFilled(validCourses) {
     for (sectionId in course.sections) {
       if (course.sections[sectionId]['status'] === "Open") {
         possibleCourses.push(course);
+        break;
       }
     }
   }
