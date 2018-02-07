@@ -210,11 +210,6 @@ function implementRegex(useRegex, term) {
 
 
 
-// Run updateSearch a tenth of a second slower to avoid race conditions.
-function asyncButtonClick() {
-  window.setTimeout(updateSearch, 100);
-}
-
 function toAmPmTime(timestring) {
   if (timestring.length === 3) {
     timestring = '0' + timestring;

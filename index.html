@@ -26,16 +26,16 @@
 		<h2 class="no-print"> Course Search</h2>
 		<div class="container-fluid no-print" id="search-area">
 			<div class="col-sm-6">
-				Course code matches: <input type="text" id="course-code" onkeyup="updateSearch()">  <input type="checkbox" id="code-regex" value="" onmousedown="asyncButtonClick()">Use RegEx
+				Course code matches: <input type="text" id="course-code" onkeyup="updateSearch()">  <input type="checkbox" id="code-regex" value="" onchange="updateSearch()">Use RegEx
 			</div>
 			<div class="col-sm-6">
-				Course title matches: <input type="text" id="course-title" onkeyup="updateSearch()">  <input type="checkbox" id="title-regex" value="" onmousedown="asyncButtonClick()">Use RegEx
+				Course title matches: <input type="text" id="course-title" onkeyup="updateSearch()">  <input type="checkbox" id="title-regex" value="" onchange="updateSearch()">Use RegEx
 			</div>
 			<div class="col-sm-6">
-				Instructor matches: <input type="text" id="instructor" onkeyup="updateSearch()">  <input type="checkbox" id="prof-regex" value="" onmousedown="asyncButtonClick()">Use RegEx
+				Instructor matches: <input type="text" id="instructor" onkeyup="updateSearch()">  <input type="checkbox" id="prof-regex" value="" onchange="updateSearch()">Use RegEx
 			</div>
 			<div class="col-sm-6">
-				Show Only Open Classes: <input type="checkbox" id="filled-regex" value="" onmousedown="asyncButtonClick()">
+				Show Only Open Classes: <input type="checkbox" id="filled-regex" onchange="updateSearch()">
 			</div>
 			
 		<!-- dropdowns will be inserted here-->
