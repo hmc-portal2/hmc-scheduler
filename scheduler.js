@@ -115,7 +115,7 @@ function addExtraAttributes() {
       var full = true;
       if (section['capacity'] && section['currentEnrollment'] && (section['currentEnrollment'] < section['capacity'])) {
         full = false;
-      } 
+      }
       section.full = full;
     }
   }
@@ -428,24 +428,39 @@ function setCreditCounter(schedule) {
     seenSoFar.add(timeSlot.section);
     return true;
   }).map(function(course) {
-    if (!course.sectionData || !('credits' in course.sectionData))
+    if (!course.sectionData) {
       return NaN;
-
-    switch(course.sectionData['campus']) {
-      case 'HM':
-        // Mudd courses are worth their full value.
-        return course.sectionData['credits'];
-      case 'JM':
-        // Joint music courses seems to be halved?
-        return course.sectionData['credits'] * 2;
-      default:
-        // Other colleges' courses need to be multiplied by three.
-        return course.sectionData['credits'] * 3;
     }
+
+    return getCredits(course.sectionData);
   }).reduce(function(a, b) {
     return a + b;
   }, 0);
   document.getElementById('credit-counter').innerHTML = isNaN(count) ? '' : '(' + count.toFixed(1) + ' credits)';
+}
+
+function getCredits(sectionData) {
+  if (!('credits' in sectionData)) {
+    return NaN;
+  }
+
+  switch(sectionData['campus']) {
+  case 'HM':
+    // Mudd courses are worth their full value.
+    return sectionData['credits'];
+  case 'JM':
+    // Joint music courses seems to be halved?
+    return sectionData['credits'] * 2;
+  default:
+    switch(sectionData['credits']) {
+    case 0.25:
+      // Usually quarter-credit off-campus becomes 1-credit.
+      return 1
+    default:
+      // Other colleges' courses usually need to be multiplied by three.
+      return sectionData['credits'] * 3;
+    }
+  }
 }
 
 function drawSchedule(schedule) {
@@ -1529,7 +1544,7 @@ function addExpandedData(index) {
 
     var credits = "??"
     if (this['credits']) {
-      credits = this['credits'];
+      credits = getCredits(this);
     }
 
     var term = "";
