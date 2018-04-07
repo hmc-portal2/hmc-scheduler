@@ -1006,17 +1006,44 @@ function getInstructorRegex(response, expression) {
 function getCoursesFilled(validCourses) {
   var possibleCourses = [];
   for (course of validCourses) {
+    modifiedCourse = course; // TODO: do we need to clone or something?
+    modifiedCourse.sections = {};
+    hasValidSections = false;
     for (sectionId in course.sections) {
-      if (course.sections[sectionId]['status'] === "Open") {
-        possibleCourses.push(course);
-        break;
+      if (course.sections[sectionId].status === "Open") {
+        modifiedCourse.sections[sectionId] = course.sections[sectionId];
+        hasValidSections = true;
       }
+    }
+    if (hasValidSections) {
+      possibleCourses.push(modifiedCourse);
     }
   }
   return possibleCourses;
 }
 
+function getCoursesMatchingSchedule(validCourses) {
+  var possibleCourses = [];
+  for (course of validCourses) {
+    modifiedCourse = course; // TODO: do we need to clone or something?
+    modifiedCourse.sections = {};
+    hasValidSections = false;
+    for (sectionId in course.sections) {
+      if (fitsInSchedule(course.sections[sectionId].schedule)) {
+        modifiedCourse.sections[sectionId] = course.sections[sectionId];
+        hasValidSections = true;
+      }
+    }
+    if (hasValidSections) {
+      possibleCourses.push(modifiedCourse);
+    }
+  }
+  return possibleCourses;
+}
 
+function fitsInSchedule(schedule) {
+  return true; // TODO: do better
+}
 
 
 function getCoursesFromDept(response, expression) {
@@ -1477,7 +1504,7 @@ function addExpandedData(index) {
   var subTable = $("<table>", {
     class: "table table-bordered"
   });
-  var header = '<thead><th>Section</th><th>Professor</th><th>Times</th><th>Dates</th><th>Seats Filled</th></thead>'
+  var header = '<thead><th>Section</th><th>Professor</th><th>Credits</th><th>Times</th><th>Dates</th><th>Seats Filled</th></thead>'
   $(header).appendTo(subTable)
   $(nameLine).appendTo(newRow);
   $(deptLine).appendTo(newRow);
@@ -1498,6 +1525,11 @@ function addExpandedData(index) {
         }
         prof += this.split(',')[0]
       });
+    }
+
+    var credits = "??"
+    if (this['credits']) {
+      credits = this['credits'];
     }
 
     var term = "";
@@ -1537,6 +1569,7 @@ function addExpandedData(index) {
 
     var sectionLine = "<td>" + index + "</td>";
     var profLine = "<td>" + prof + "</td>";
+    var creditsLine = "<td>" + credits + "</td>";
     var scheduleLine = "<td>" + times + "</td>";
     var timeLine = "<td>" + start + " - " + end + "</td>";
     var availabilityLine = "<td>" + filled + "/" + capacity + " seats (" + status + ")</td>";
@@ -1544,6 +1577,7 @@ function addExpandedData(index) {
     var subRow = $("<tr>");
     subRow.append(sectionLine);
     subRow.append(profLine);
+    subRow.append(creditsLine);
     subRow.append(scheduleLine);
     subRow.append(timeLine);
     subRow.append(availabilityLine);
