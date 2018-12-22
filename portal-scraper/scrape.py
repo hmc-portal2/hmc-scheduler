@@ -18,8 +18,7 @@ import requests
 import collections
 import subprocess
 
-MAX_PORTAL_RETRIES = 5
-MAX_PORTAL_CHROME_RETRIES = 2
+MAX_PORTAL_CHROME_RETRIES = 5
 MAX_PORTAL_FIREFOX_RETRIES = 2
 
 ENDPOINT = 'www.lingkapis.com'
@@ -40,19 +39,28 @@ else:
         KEY = ''
         SECRET = b''
 
+TERM_RE = re.compile(r'(?P<season>[A-Z]{2}) (?P<part>(?:[A-Z0-9]{2})?) (?P<year>[0-9]{4})')
+def term_sort(term):
+    m = TERM_RE.match(term)
+    if m:
+        return (-int(m.group('year')), -{'SP': 0, 'SU': 1, 'FA': 2}[m.group('season')], m.group('part'))
+    else:
+        return (0, 0, '')
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--directory', '-d', default='.', action='store')
     which_data = parser.add_mutually_exclusive_group()
     which_data.add_argument('--all-terms', '-a', action='store_true')
     which_data.add_argument('--api-classes', '-p', action='store_true')
-    parser.add_argument('--no-save', '-e', action='store_true')
+    parser.add_argument('--no-save', '-e', '--dry-run', action='store_true')
     parser.add_argument('--fetch-infomap', '-i', action='store_true')
     args = parser.parse_args()
     api_data = fetch_api_data()['data']
     api_classes_by_term = format_api_data_as_portal_data(api_data)
     selected_term, all_terms, courseareas = fetch_portal_info()
-    api_extra_terms = list(api_classes_by_term.keys() - set(all_terms))
+    all_terms.sort(key=term_sort)
+    api_extra_terms = sorted(api_classes_by_term.keys() - set(all_terms), key=term_sort)
     if args.all_terms:
         terms_to_fetch = all_terms
     elif args.api_classes:
@@ -61,12 +69,14 @@ def main():
         terms_to_fetch = all_terms[:all_terms.index(selected_term)+1]
     classes_by_term = fetch_some_portal_classes(terms_to_fetch)
     merge(classes_by_term, api_classes_by_term)
+    if len(api_extra_terms) > 0 and (term_sort(api_extra_terms[0]) < term_sort(selected_term)):
+        selected_term = api_extra_terms[0]
     if args.fetch_infomap:
         infomaps = {term: fetch_portal_areamap(term, courseareas) for term in terms_to_fetch}
     if not args.no_save:
         os.makedirs(args.directory, exist_ok=True)
         with open(os.path.join(args.directory, 'main.json'), 'w') as f:
-            json.dump({'terms': all_terms + api_extra_terms,
+            json.dump({'terms': sorted(all_terms + api_extra_terms, key=term_sort),
                        'areas': courseareas,
                        'selected': selected_term,
                        'selected_data': classes_by_term[selected_term]},
@@ -83,6 +93,9 @@ def format_api_data_as_portal_data(api_data):
     api_classes_by_term = {}
     for api_class in api_data:
         merge(api_classes_by_term, api_class_to_portal_classes(api_class))
+    # return classes in sorted order
+    for term in api_classes_by_term:
+        api_classes_by_term[term] = collections.OrderedDict(sorted(api_classes_by_term[term].items()))
     return api_classes_by_term
 
 API_TERM_RE = re.compile(r'^(?P<season>FA|SP|SU)(?P<year>[0-9]{4})(?P<part>[FP][12])?$')
@@ -167,6 +180,8 @@ def api_instructor_names(api_instructors):
     return instructors
 
 def parse_api_schedule(schedule_part):
+    if len(schedule_part['ClassEndingTime']) == 2:
+        print(schedule_part)
     return {
         'days': schedule_part['ClassMeetingDays'].replace('-',''),
         'start_time': reformat_api_time(schedule_part['ClassBeginningTime']),
@@ -178,6 +193,7 @@ def parse_api_schedule(schedule_part):
 def reformat_api_time(api_time):
     if api_time == '0':
         return None
+    api_time = '0000' + api_time
     minutes = int(api_time[-2:])
     hours = int(api_time[:-2])
     time_obj = datetime.time(hour=hours, minute=minutes)
@@ -224,12 +240,6 @@ def fetch_api_data():
     raise json_err
 
 def fetch_portal(term=None, coursearea=None):
-    for i in range(MAX_PORTAL_RETRIES):
-        try:
-            with Browser('phantomjs') as browser:
-                return fetch_portal_with_browser(browser, term, coursearea)
-        except:
-            print('x', end='', flush=True, file=sys.stderr)
     for i in range(MAX_PORTAL_CHROME_RETRIES):
         try:
             with Browser('chrome', headless=True) as browser:
@@ -238,7 +248,7 @@ def fetch_portal(term=None, coursearea=None):
             print('X', end='', flush=True, file=sys.stderr)
     for i in range(MAX_PORTAL_FIREFOX_RETRIES):
         try:
-            with Browser('firefox') as browser:
+            with Browser('firefox', headless=True) as browser:
                 return fetch_portal_with_browser(browser, term, coursearea)
         except:
             print('X', end='', flush=True, file=sys.stderr)
@@ -255,7 +265,7 @@ def fetch_portal_with_browser(browser, term, coursearea):
             term_selector.select_by_text(term)
     print('.', end='', flush=True, file=sys.stderr)
     if coursearea is None:
-        browser.fill('pg0$V$txtCourseRestrictor', '*')
+        browser.fill('pg0$V$txtTitleRestrictor', '*')
     else:
         coursearea_selector = browser.find_by_id('pg0_V_ddlAdditional').first
         coursearea_selector.select_by_text(coursearea)
@@ -275,7 +285,7 @@ def fetch_portal_with_coursearea(term_coursearea):
     return coursearea, fetch_portal(term=term, coursearea=coursearea)
 
 def fetch_portal_info():
-    with Browser('phantomjs') as browser:
+    with Browser('chrome', headless=True) as browser:
         print('.', end='', flush=True, file=sys.stderr)
         browser.visit('https://portal.hmc.edu/ICS/default.aspx?portlet=Course_Schedules&screen=Advanced+Course+Search')
         print('.', end='', flush=True, file=sys.stderr)
@@ -522,6 +532,12 @@ def parse_schedule(schedule_strings, start_date, end_date):
         m = SCHEDULE_RE.match(timestr)
         if not m:
             print('unmatched schedule string: {}'.format(timestr), file=sys.stderr)
+            timestr = timestr.replace('208', '2018')
+            m = SCHEDULE_RE.match(timestr)
+            if not m:
+               print('still not matched', file=sys.stderr)
+               schedule.append({'start_date': start_date, 'end_date': end_date})
+               continue
         schedule_part = m.groupdict()
         if schedule_part['start_ampm'] is None:
             schedule_part['start_ampm'] = schedule_part['end_ampm']

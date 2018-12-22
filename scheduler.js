@@ -34,10 +34,14 @@ function fetchCourseAreas() {
   if(!(term in globalCourseAreas)) {
     fetch('/data/'+term+'_infomap.json').then(function(response) {
       return response.json();
+    }, function(error) {
+      globalCourseAreas[term] = {}
     }).then(function(json){
       globalCourseAreas[term] = json;
       area = $("#course-areas_btn").attr('realVal');
       if(area != "All") updateSearch();
+    }, function(error) {
+      globalCourseAreas[term] = {}
     })
   }
 }
@@ -220,7 +224,11 @@ function toAmPmTime(timestring) {
   if (hours.length === 1) {
     hours = '0' + hours;
   }
-  minutes = timestring.substring(2, 4);
+  if (timestring[2] === ':') {
+    minutes = timestring.substring(3,5);
+  } else {
+    minutes = timestring.substring(2, 4);
+  }
   return hours + ':' + minutes + (ispm ? 'PM' : 'AM');
 }
 
@@ -253,9 +261,9 @@ function toCourseObject(courseJson) {
       isFirstTime = false;
       timeslot += schedule['days'];
       timeslot += ' ';
-      timeslot += schedule['start'] + schedule['start_ampm'];
+      timeslot += toAmPmTime(schedule['start_time']);
       timeslot += '-';
-      timeslot += schedule['end'] + schedule['end_ampm'];
+      timeslot += toAmPmTime(schedule['end_time']);
       timeslot += '; ';
       timeslot += schedule['site'];
     }
